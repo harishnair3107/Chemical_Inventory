@@ -1,5 +1,6 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import Home from '../pages/Home';
 import EmployeeDashboard from '../pages/EmployeeDashboard';
 import InventoryList from '../pages/InventoryList';
@@ -9,9 +10,17 @@ import AdminPortal from '../pages/AdminPortal';
 import ProtectedRoute from '../components/ProtectedRoute';
 
 const AppRoutes = () => {
+    const { user } = useAuth();
+
     return (
         <Routes>
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={
+                user ? (
+                    <Navigate to={user.role === 'admin' ? '/admin' : '/inventory'} replace />
+                ) : (
+                    <Home />
+                )
+            } />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/admin" element={<AdminPortal />} />

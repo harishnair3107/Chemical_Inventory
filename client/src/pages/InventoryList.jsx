@@ -4,6 +4,7 @@ import { Plus, Search, Filter, MoreVertical, RefreshCcw, CheckCircle, Trash2 } f
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import AddChemicalModal from '../components/AddChemicalModal';
+import UpdateStockModal from '../components/UpdateStockModal';
 import '../styles/InventoryList.css';
 
 const InventoryList = () => {
@@ -11,10 +12,14 @@ const InventoryList = () => {
   const [chemicals, setChemicals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [editingChemical, setEditingChemical] = useState(null);
+  const [updatingChemical, setUpdatingChemical] = useState(null);
 
   useEffect(() => {
     fetchChemicals();
+    const interval = setInterval(fetchChemicals, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   const fetchChemicals = async () => {
@@ -32,7 +37,7 @@ const InventoryList = () => {
     try {
       await axios.patch(`http://localhost:5000/api/inventory/${id}/status`, {
         status: newStatus,
-        userId: user._id,
+        userId: user.id,
         username: user.username
       });
       fetchChemicals();
@@ -47,22 +52,40 @@ const InventoryList = () => {
           // Edit mode
           await axios.put(`http://localhost:5000/api/inventory/${id}`, {
               ...formData,
-              userId: user._id,
-              username: user.username
+              userId: user.id,
+              username: user.username,
+              role: user.role
           });
       } else {
           // Add mode
           await axios.post('http://localhost:5000/api/inventory', {
             ...formData,
-            userId: user._id,
-            username: user.username
+            userId: user.id,
+            username: user.username,
+            role: user.role
           });
       }
       setIsModalOpen(false);
       setEditingChemical(null);
       fetchChemicals();
     } catch (err) {
-      alert(`Failed to ${id ? 'update' : 'add'} chemical`);
+      alert(`Failed to ${id ? 'update' : 'add'} chemical: ${err.response?.data?.message || err.message}`);
+    }
+  };
+
+  const handleUpdateStock = async (updateData) => {
+    try {
+      await axios.post(`http://localhost:5000/api/inventory/${updatingChemical._id}/update`, {
+        ...updateData,
+        userId: user.id,
+        username: user.username,
+        role: user.role
+      });
+      setIsUpdateModalOpen(false);
+      setUpdatingChemical(null);
+      fetchChemicals();
+    } catch (err) {
+      alert(`Failed to update stock: ${err.response?.data?.message || err.message}`);
     }
   };
 
@@ -70,11 +93,11 @@ const InventoryList = () => {
     if (!window.confirm('Are you sure you want to delete this chemical?')) return;
     try {
       await axios.delete(`http://localhost:5000/api/inventory/${id}`, {
-          data: { userId: user._id, username: user.username } // Pass for logging
+          data: { userId: user.id, username: user.username, role: user.role }
       });
       fetchChemicals();
     } catch (err) {
-      alert('Failed to delete chemical');
+      alert(`Failed to delete chemical: ${err.response?.data?.message || err.message}`);
     }
   };
 
@@ -85,7 +108,7 @@ const InventoryList = () => {
           <h1>Chemical Inventory</h1>
           <p>Manage and track your chemical stock records.</p>
         </div>
-        {user?.role === 'employee' && (
+        {user?.role === 'admin' && (
           <Button className="add-btn" onClick={() => setIsModalOpen(true)}>
             <Plus size={18} />
             <span>Add Chemical</span>
@@ -137,16 +160,15 @@ const InventoryList = () => {
                           {chem.status || 'Available'}
                         </span>
                       </td>
-                      <td>
+                       <td>
                         <div className="action-group">
-                          {user?.role === 'employee' ? (
+                          {(user?.role === 'employee' || user?.role === 'admin') && (
+                            <button onClick={() => { setUpdatingChemical(chem); setIsUpdateModalOpen(true); }} title="Update Stock" className="action-btn refill">
+                              <RefreshCcw size={16} />
+                            </button>
+                          )}
+                          {user?.role === 'admin' && (
                             <>
-                              <button onClick={() => handleUpdateStatus(chem._id, 'Refilled')} title="Mark as Refilled" className="action-btn refill">
-                                <RefreshCcw size={16} />
-                              </button>
-                              <button onClick={() => handleUpdateStatus(chem._id, 'Completed')} title="Mark as Completed" className="action-btn complete">
-                                <CheckCircle size={16} />
-                              </button>
                               <button onClick={() => { setEditingChemical(chem); setIsModalOpen(true); }} className="action-btn edit" title="Edit Item">
                                 <MoreVertical size={16} />
                               </button>
@@ -154,8 +176,6 @@ const InventoryList = () => {
                                 <Trash2 size={16} />
                               </button>
                             </>
-                          ) : (
-                            <span className="view-only-tag">View Only</span>
                           )}
                         </div>
                       </td>
@@ -171,6 +191,13 @@ const InventoryList = () => {
         onClose={() => { setIsModalOpen(false); setEditingChemical(null); }} 
         onAdd={handleAddChemical}
         initialData={editingChemical}
+      />
+
+      <UpdateStockModal
+        isOpen={isUpdateModalOpen}
+        onClose={() => { setIsUpdateModalOpen(false); setUpdatingChemical(null); }}
+        onUpdate={handleUpdateStock}
+        chemical={updatingChemical}
       />
     </div>
   );

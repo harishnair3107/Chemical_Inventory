@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import { Beaker, AlertTriangle, List, Activity, Clock } from 'lucide-react';
+import { Beaker, AlertTriangle, List, Activity, Clock, CheckCircle, Truck, CreditCard } from 'lucide-react';
 import '../styles/Dashboard.css';
 
 const EmployeeDashboard = () => {
@@ -15,6 +15,13 @@ const EmployeeDashboard = () => {
         fetchActivities();
         fetchStats();
         fetchAlerts();
+
+        const interval = setInterval(() => {
+            fetchActivities();
+            fetchStats();
+            fetchAlerts();
+        }, 5000);
+        return () => clearInterval(interval);
     }
   }, [user]);
 
@@ -28,7 +35,7 @@ const EmployeeDashboard = () => {
 
         setStatsData({
             total: data.length,
-            low: data.filter(c => c.quantity < 10).length,
+            low: data.filter(c => c.quantity < 10 && c.quantity > 0).length,
             expiring: data.filter(c => new Date(c.expiryDate) < thirtyDays).length,
             categories: [...new Set(data.map(c => c.category))].length || 0
         });
@@ -48,10 +55,22 @@ const EmployeeDashboard = () => {
 
   const fetchActivities = async () => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/activity?role=employee&userId=${user._id}`);
+      const res = await axios.get(`http://localhost:5000/api/activity?role=employee&userId=${user.id}`);
       setActivities(res.data);
     } catch (err) {
       console.error('Failed to fetch activities');
+    }
+  };
+
+  const handleToggleStatus = async (id, field, currentValue) => {
+    try {
+        const updateData = {
+            [field]: !currentValue
+        };
+        await axios.patch(`http://localhost:5000/api/activity/${id}/status`, updateData);
+        fetchActivities(); // Refresh
+    } catch (err) {
+        alert('Failed to update activity status');
     }
   };
 
@@ -87,7 +106,7 @@ const EmployeeDashboard = () => {
         <section className="recent-activity">
           <div className="section-header">
             <Activity size={20} />
-            <h2>Your Recent Activity</h2>
+            <h2>Your Recent Updates</h2>
           </div>
           <div className="activity-list">
             {activities.length === 0 ? (
@@ -95,9 +114,34 @@ const EmployeeDashboard = () => {
             ) : (
                 activities.map(act => (
                     <div key={act._id} className="activity-item">
-                        <div className="activity-dot"></div>
-                        <p>{act.details}</p>
-                        <span>{new Date(act.createdAt).toLocaleString()}</span>
+                        <div className={`activity-dot ${act.action === 'Stock Update' ? 'primary' : 'success'}`}></div>
+                        <div className="activity-content-wrapper">
+                            <div className="activity-main-info">
+                                <p className="activity-details">{act.details}</p>
+                                <span className="activity-time">{new Date(act.createdAt).toLocaleString()}</span>
+                            </div>
+                            
+                            {act.action === 'Stock Update' && (
+                                <div className="activity-status-controls">
+                                    <button 
+                                        className={`status-chip ${act.isDelivered ? 'active' : ''}`}
+                                        onClick={() => handleToggleStatus(act._id, 'isDelivered', act.isDelivered)}
+                                        title={act.isDelivered ? "Mark as Undelivered" : "Mark as Delivered"}
+                                    >
+                                        <Truck size={14} />
+                                        <span>{act.isDelivered ? 'Delivered' : 'Pending Delivery'}</span>
+                                    </button>
+                                    <button 
+                                        className={`status-chip payment ${act.isPaymentReceived ? 'active' : ''}`}
+                                        onClick={() => handleToggleStatus(act._id, 'isPaymentReceived', act.isPaymentReceived)}
+                                        title={act.isPaymentReceived ? "Mark as Payment Pending" : "Mark as Payment Received"}
+                                    >
+                                        <CreditCard size={14} />
+                                        <span>{act.isPaymentReceived ? 'Paid' : 'Payment Pending'}</span>
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 ))
             )}
@@ -110,17 +154,17 @@ const EmployeeDashboard = () => {
                 <h2>Critical Alerts</h2>
             </div>
             <div className="alerts-container">
-                {alerts.expiringSoon.length === 0 && alerts.lowStock.length === 0 ? (
+                {alerts.expiringSoon?.length === 0 && alerts.lowStock?.length === 0 ? (
                     <p className="no-data">All systems operational. No alerts.</p>
                 ) : (
                     <>
-                        {alerts.expiringSoon.map(item => (
+                        {alerts.expiringSoon?.map(item => (
                             <div key={item._id} className="alert-card-small expiry">
                                 <Clock size={16} />
                                 <span>{item.name} expiring on {new Date(item.expiryDate).toLocaleDateString()}</span>
                             </div>
                         ))}
-                        {alerts.lowStock.map(item => (
+                        {alerts.lowStock?.map(item => (
                             <div key={item._id} className="alert-card-small low-stock">
                                 <AlertTriangle size={16} />
                                 <span>{item.name} is low on stock ({item.quantity} {item.unit})</span>

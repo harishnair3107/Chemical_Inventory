@@ -3,22 +3,26 @@ import { NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Users, 
+  UserPlus,
   Package, 
   Settings, 
   LogOut, 
   X,
   UserCircle,
-  Bell,
-  FileText
+  AlertTriangle,
+  FileText,
+  BarChart3
 } from 'lucide-react';
 import '../styles/Sidebar.css';
 
 const Sidebar = ({ isOpen, toggleSidebar, user, logout, activeTab, setActiveTab }) => {
   const adminLinks = [
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
-    { id: 'requests', label: 'Access Requests', icon: <Users size={20} /> },
-    { id: 'alerts', label: 'Stock Alerts', icon: <Bell size={20} /> },
-    { id: 'reports', label: 'System Reports', icon: <FileText size={20} /> },
+    { id: 'inventory', label: 'Inventory Management', icon: <Package size={20} /> },
+    { id: 'requests', label: 'Access Requests', icon: <UserPlus size={20} /> },
+    { id: 'alerts', label: 'Stock Alerts', icon: <AlertTriangle size={20} /> },
+    { id: 'employee-logs', label: 'Employee Logs', icon: <FileText size={20} /> },
+    { id: 'reports', label: 'Reports', icon: <BarChart3 size={20} /> },
     { id: 'settings', label: 'Settings', icon: <Settings size={20} /> },
   ];
 

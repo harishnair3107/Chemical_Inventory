@@ -6,7 +6,8 @@ const {
     verifyAdminOtp,
     getPendingEmployees,
     approveEmployee,
-    rejectEmployee
+    rejectEmployee,
+    getActiveEmployees
 } = require('./auth.controller');
 const router = express.Router();
 
@@ -18,6 +19,7 @@ router.post('/login', employeeLogin);
 router.post('/admin/login', adminLogin);
 router.post('/admin/verify', verifyAdminOtp);
 router.get('/pending', getPendingEmployees);
+router.get('/employees', getActiveEmployees);
 router.put('/approve/:id', approveEmployee);
 router.delete('/reject/:id', rejectEmployee);
 

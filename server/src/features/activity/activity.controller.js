@@ -28,4 +28,19 @@ const logActivity = async (data) => {
     }
 };
 
-module.exports = { getActivities, logActivity };
+const updateActivityStatus = async (req, res) => {
+    try {
+        const { isDelivered, isPaymentReceived } = req.body;
+        const activity = await Activity.findByIdAndUpdate(
+            req.params.id,
+            { isDelivered, isPaymentReceived },
+            { returnDocument: 'after' }
+        );
+        if (!activity) return res.status(404).json({ message: 'Activity not found' });
+        res.json(activity);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+module.exports = { getActivities, logActivity, updateActivityStatus };

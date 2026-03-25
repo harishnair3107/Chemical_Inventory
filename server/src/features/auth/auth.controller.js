@@ -153,6 +153,15 @@ const rejectEmployee = async (req, res) => {
     }
 };
 
+const getActiveEmployees = async (req, res) => {
+    try {
+        const employees = await User.find({ status: 'active', role: 'employee' }).select('-password -otp -otpExpires');
+        res.json(employees);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = { 
     registerEmployee, 
     employeeLogin, 
@@ -160,5 +169,6 @@ module.exports = {
     verifyAdminOtp, 
     getPendingEmployees, 
     approveEmployee, 
-    rejectEmployee 
+    rejectEmployee,
+    getActiveEmployees
 };

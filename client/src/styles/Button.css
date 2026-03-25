@@ -16,22 +16,23 @@
 }
 
 .btn-primary {
-  background-color: var(--accent-primary);
-  color: white;
+  background-color: blueviolet !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 6px -1px rgba(138, 43, 226, 0.2);
 }
 
 .btn-primary:hover {
-  background-color: var(--accent-hover);
+  opacity: 0.9;
 }
 
 .btn-outline {
-  background-color: transparent;
-  border: 1px solid var(--border-color);
-  color: var(--text-primary);
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border);
+  color: var(--text-h);
 }
 
 .btn-outline:hover {
-  background-color: var(--bg-secondary);
+  background-color: var(--border-muted);
 }
 
 .btn-danger {

@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import Input from '../components/Input';
 import Button from '../components/Button';
 import Sidebar from '../components/Sidebar';
+import InventoryList from './InventoryList';
 import { 
   Shield, 
   Clock, 
@@ -30,8 +31,11 @@ const AdminPortal = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [requests, setRequests] = useState([]);
   const [activities, setActivities] = useState([]);
-  const [alerts, setAlerts] = useState({ lowStock: [], expiringSoon: [] });
+  const [alerts, setAlerts] = useState({ lowStock: [], expiringSoon: [], emptyStock: [] });
   const [totalChemicals, setTotalChemicals] = useState(0);
+  const [employees, setEmployees] = useState([]);
+  const [selectedEmployee, setSelectedEmployee] = useState('');
+  const [employeeActivities, setEmployeeActivities] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -43,6 +47,7 @@ const AdminPortal = () => {
       fetchActivities();
       fetchAlerts();
       fetchStats();
+      fetchEmployees();
 
       const interval = setInterval(() => {
         fetchRequests();
@@ -88,6 +93,45 @@ const AdminPortal = () => {
     } catch (err) {
       console.error('Failed to fetch stats');
     }
+  };
+
+  const fetchEmployees = async () => {
+    try {
+      const res = await axios.get('http://localhost:5000/api/auth/employees');
+      setEmployees(res.data);
+    } catch (err) {
+      console.error('Failed to fetch employees');
+    }
+  };
+
+  const fetchEmployeeLogs = async (userId) => {
+    if (!userId) return;
+    try {
+      const res = await axios.get(`http://localhost:5000/api/activity?role=employee&userId=${userId}`);
+      setEmployeeActivities(res.data);
+    } catch (err) {
+      console.error('Failed to fetch employee logs');
+    }
+  };
+
+  const downloadEmployeeLogs = () => {
+    if (employeeActivities.length === 0) return;
+    const employee = employees.find(e => e._id === selectedEmployee);
+    const csv = [
+        ['Action', 'Details', 'Timestamp'],
+        ...employeeActivities.map(act => [
+            act.action,
+            act.details,
+            new Date(act.createdAt).toLocaleString()
+        ])
+    ].map(e => e.join(",")).join("\n");
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.setAttribute('href', url);
+    a.setAttribute('download', `logs_${employee?.username || 'employee'}_${new Date().toISOString().split('T')[0]}.csv`);
+    a.click();
   };
 
   const handleDownloadReport = async () => {
@@ -225,7 +269,7 @@ const AdminPortal = () => {
                     <Activity size={16} />
                 </div>
                 <div className="log-details">
-                  <p><strong>{act.username || 'System'}</strong> {(act.details || '').replace(act.username || '', '').trim()}</p>
+                  <p><strong>{act.username}</strong> ({act.role}): {act.details.replace(act.username, '').trim()}</p>
                   <span className="log-time">{new Date(act.createdAt).toLocaleString()}</span>
                 </div>
                 <span className={`log-tag ${(act.action || 'Unknown').toLowerCase().replace(' ', '-')}`}>
@@ -285,6 +329,20 @@ const AdminPortal = () => {
 
       <div className="alerts-grid">
         <section className="alert-box danger">
+          <h3><AlertCircle size={20} /> Out of Stock (0 Quantity)</h3>
+          {alerts.emptyStock.length === 0 ? <p className="no-data">No items are completely out of stock.</p> : (
+            <div className="alert-list">
+              {alerts.emptyStock.map(item => (
+                <div key={item._id} className="alert-item">
+                  <span>{item.name}</span>
+                  <span className="item-meta">Quantity: 0 {item.unit}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="alert-box danger" style={{ opacity: 0.85 }}>
           <h3><AlertTriangle size={20} /> Low Stock Levels</h3>
           {alerts.lowStock.length === 0 ? <p className="no-data">All stock levels are optimal.</p> : (
             <div className="alert-list">
@@ -311,6 +369,61 @@ const AdminPortal = () => {
             </div>
           )}
         </section>
+      </div>
+    </div>
+  );
+
+  const EmployeeLogsView = () => (
+    <div className="panel-view">
+      <div className="view-header">
+        <h2>Employee Activities</h2>
+        <p>Track progress and performance of specific employees.</p>
+      </div>
+
+      <div className="logs-control-panel">
+        <div className="employee-select-wrapper">
+          <label>Select Employee</label>
+          <select 
+            value={selectedEmployee} 
+            onChange={(e) => {
+              setSelectedEmployee(e.target.value);
+              fetchEmployeeLogs(e.target.value);
+            }}
+            className="admin-select"
+          >
+            <option value="">-- Choose an employee --</option>
+            {employees.map(emp => (
+              <option key={emp._id} value={emp._id}>{emp.username} ({emp.email})</option>
+            ))}
+          </select>
+        </div>
+        {selectedEmployee && employeeActivities.length > 0 && (
+          <Button onClick={downloadEmployeeLogs} className="download-logs-btn">
+            <Download size={18} /> Export as CSV
+          </Button>
+        )}
+      </div>
+
+      <div className="employee-activity-feed">
+        {!selectedEmployee ? (
+          <div className="empty-state">
+            <Users size={48} />
+            <p>Select an employee to view their activity history.</p>
+          </div>
+        ) : employeeActivities.length === 0 ? (
+          <p className="no-data">No activities found for this employee.</p>
+        ) : (
+          employeeActivities.map((act) => (
+            <div key={act._id} className="activity-log">
+                <div className="log-icon"><Activity size={16} /></div>
+                <div className="log-details">
+                    <p>{act.details}</p>
+                    <span className="log-time">{new Date(act.createdAt).toLocaleString()}</span>
+                </div>
+                <span className={`log-tag ${(act.action || 'update').toLowerCase().replace(' ', '-')}`}>{act.action || 'Update'}</span>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
@@ -366,8 +479,10 @@ const AdminPortal = () => {
 
           <div className="admin-page-content">
             {activeTab === 'dashboard' && <DashboardView />}
+            {activeTab === 'inventory' && <InventoryList />}
             {activeTab === 'requests' && <RequestsView />}
             {activeTab === 'alerts' && <AlertsView />}
+            {activeTab === 'employee-logs' && <EmployeeLogsView />}
             {activeTab === 'reports' && <ReportsView />}
             {activeTab === 'settings' && (
               <div className="panel-view">

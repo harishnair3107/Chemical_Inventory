@@ -8,7 +8,7 @@ const chemicalSchema = new mongoose.Schema({
     expiryDate: { type: Date, required: true },
     storageLocation: { type: String, required: true },
     category: { type: String, default: 'General' },
-    status: { type: String, enum: ['Available', 'Low', 'Refilled', 'Completed'], default: 'Available' }
+    status: { type: String, enum: ['Available', 'Low Stock', 'Out of Stock', 'Refilled', 'Completed'], default: 'Available' }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Chemical', chemicalSchema);

@@ -28,8 +28,8 @@ const Navbar = () => {
               <NavLink to="/admin" className={({ isActive }) => isActive ? 'active' : ''}>Admin Panel</NavLink>
             ) : (
               <>
-                <NavLink to="/dashboard" className={({ isActive }) => isActive ? 'active' : ''}>Dashboard</NavLink>
                 <NavLink to="/inventory" className={({ isActive }) => isActive ? 'active' : ''}>Inventory</NavLink>
+                <NavLink to="/dashboard" className={({ isActive }) => isActive ? 'active' : ''}>Dashboard</NavLink>
               </>
             )
           ) : (
