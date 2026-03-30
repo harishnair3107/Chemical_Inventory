@@ -80,6 +80,20 @@
     gap: 1.5rem;
 }
 
+.logs-actions {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.remove-employee-btn {
+    background-color: #ef4444 !important;
+}
+
+.remove-employee-btn:hover {
+    background-color: #dc2626 !important;
+}
+
 .employee-select-wrapper {
     flex: 1;
     display: flex;

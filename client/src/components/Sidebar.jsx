@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Users, 
@@ -16,6 +16,13 @@ import {
 import '../styles/Sidebar.css';
 
 const Sidebar = ({ isOpen, toggleSidebar, user, logout, activeTab, setActiveTab }) => {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
   const adminLinks = [
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
     { id: 'inventory', label: 'Inventory Management', icon: <Package size={20} /> },
@@ -65,7 +72,7 @@ const Sidebar = ({ isOpen, toggleSidebar, user, logout, activeTab, setActiveTab 
       </nav>
 
       <div className="sidebar-footer">
-        <button className="logout-btn" onClick={logout}>
+        <button className="logout-btn" onClick={handleLogout}>
           <LogOut size={20} />
           <span>Log Out</span>
         </button>

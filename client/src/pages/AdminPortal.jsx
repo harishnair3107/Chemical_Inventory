@@ -218,6 +218,21 @@ const AdminPortal = () => {
     }
   };
 
+  const handleRemoveEmployee = async (id) => {
+    if (!window.confirm('Are you sure you want to remove this employee? All their activity logs will remain but they will lose access.')) return;
+    try {
+      await axios.delete(`http://localhost:5000/api/auth/remove/${id}`);
+      setEmployees(employees.filter(emp => emp._id !== id));
+      if (selectedEmployee === id) {
+        setSelectedEmployee('');
+        setEmployeeActivities([]);
+      }
+      alert('Employee removed successfully');
+    } catch (err) {
+      alert('Failed to remove employee');
+    }
+  };
+
   // Sub-components for Panel Views
   const DashboardView = () => (
     <div className="panel-view">
@@ -397,11 +412,22 @@ const AdminPortal = () => {
             ))}
           </select>
         </div>
-        {selectedEmployee && employeeActivities.length > 0 && (
-          <Button onClick={downloadEmployeeLogs} className="download-logs-btn">
-            <Download size={18} /> Export as CSV
-          </Button>
-        )}
+        <div className="logs-actions">
+          {selectedEmployee && employeeActivities.length > 0 && (
+            <Button onClick={downloadEmployeeLogs} className="download-logs-btn">
+              <Download size={18} /> Export as CSV
+            </Button>
+          )}
+          {selectedEmployee && (
+            <Button 
+              variant="danger" 
+              onClick={() => handleRemoveEmployee(selectedEmployee)} 
+              className="remove-employee-btn"
+            >
+              <UserX size={18} /> Remove Employee
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="employee-activity-feed">
