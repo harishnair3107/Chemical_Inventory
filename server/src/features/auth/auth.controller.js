@@ -153,6 +153,25 @@ const rejectEmployee = async (req, res) => {
     }
 };
 
+const removeEmployee = async (req, res) => {
+    try {
+        const user = await User.findByIdAndDelete(req.params.id);
+        if (!user) return res.status(404).json({ message: 'Employee not found' });
+
+        await logActivity({
+            user: user._id,
+            username: 'Admin',
+            action: 'Removed',
+            details: `Admin removed employee account: ${user.username}`,
+            role: 'admin'
+        });
+
+        res.json({ message: 'Employee removed successfully' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 const getActiveEmployees = async (req, res) => {
     try {
         const employees = await User.find({ status: 'active', role: 'employee' }).select('-password -otp -otpExpires');
@@ -170,5 +189,6 @@ module.exports = {
     getPendingEmployees, 
     approveEmployee, 
     rejectEmployee,
+    removeEmployee,
     getActiveEmployees
 };

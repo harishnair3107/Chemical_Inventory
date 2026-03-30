@@ -7,6 +7,7 @@ const {
     getPendingEmployees,
     approveEmployee,
     rejectEmployee,
+    removeEmployee,
     getActiveEmployees
 } = require('./auth.controller');
 const router = express.Router();
@@ -22,5 +23,6 @@ router.get('/pending', getPendingEmployees);
 router.get('/employees', getActiveEmployees);
 router.put('/approve/:id', approveEmployee);
 router.delete('/reject/:id', rejectEmployee);
+router.delete('/remove/:id', removeEmployee);
 
 module.exports = router;
