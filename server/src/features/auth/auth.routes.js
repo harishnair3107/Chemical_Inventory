@@ -4,10 +4,10 @@ const {
     employeeLogin,
     adminLogin,
     verifyAdminOtp,
-    getPendingEmployees,
     approveEmployee,
     rejectEmployee,
     removeEmployee,
+    logoutEmployee,
     getActiveEmployees
 } = require('./auth.controller');
 const router = express.Router();
@@ -15,6 +15,7 @@ const router = express.Router();
 // Employee routes
 router.post('/register', registerEmployee);
 router.post('/login', employeeLogin);
+router.post('/logout', logoutEmployee);
 
 // Admin routes
 router.post('/admin/login', adminLogin);

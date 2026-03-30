@@ -11,7 +11,8 @@ import {
   UserCircle,
   AlertTriangle,
   FileText,
-  BarChart3
+  BarChart3,
+  Clock
 } from 'lucide-react';
 import '../styles/Sidebar.css';
 
@@ -27,6 +28,7 @@ const Sidebar = ({ isOpen, toggleSidebar, user, logout, activeTab, setActiveTab 
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
     { id: 'inventory', label: 'Inventory Management', icon: <Package size={20} /> },
     { id: 'requests', label: 'Access Requests', icon: <UserPlus size={20} /> },
+    { id: 'attendance', label: 'Attendance Logs', icon: <Clock size={20} /> },
     { id: 'alerts', label: 'Stock Alerts', icon: <AlertTriangle size={20} /> },
     { id: 'employee-logs', label: 'Employee Logs', icon: <FileText size={20} /> },
     { id: 'reports', label: 'Reports', icon: <BarChart3 size={20} /> },

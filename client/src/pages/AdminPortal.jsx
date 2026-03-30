@@ -5,6 +5,7 @@ import Input from '../components/Input';
 import Button from '../components/Button';
 import Sidebar from '../components/Sidebar';
 import InventoryList from './InventoryList';
+import Calendar from '../components/Calendar';
 import { 
   Shield, 
   Clock, 
@@ -40,6 +41,8 @@ const AdminPortal = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date().toLocaleDateString('sv-SE'));
+  const [attendanceLogs, setAttendanceLogs] = useState([]);
 
   useEffect(() => {
     if (user && user.role === 'admin') {
@@ -49,16 +52,18 @@ const AdminPortal = () => {
       fetchAlerts();
       fetchStats();
       fetchEmployees();
+      fetchAttendance(selectedDate);
 
       const interval = setInterval(() => {
         fetchRequests();
         fetchActivities();
         fetchAlerts();
         fetchStats();
+        fetchAttendance(selectedDate);
       }, 5000);
       return () => clearInterval(interval);
     }
-  }, [user]);
+  }, [user, selectedDate]);
 
   const fetchRequests = async () => {
     try {
@@ -102,6 +107,16 @@ const AdminPortal = () => {
       setEmployees(res.data);
     } catch (err) {
       console.error('Failed to fetch employees');
+    }
+  };
+
+  const fetchAttendance = async (date) => {
+    if (!date) return;
+    try {
+      const res = await axios.get(`http://localhost:5000/api/activity?role=admin&date=${date}&actions=Login,Logout&targetRole=employee`);
+      setAttendanceLogs(res.data);
+    } catch (err) {
+      console.error('Failed to fetch attendance');
     }
   };
 
@@ -522,6 +537,53 @@ const AdminPortal = () => {
           <div className="admin-page-content">
             {activeTab === 'dashboard' && <DashboardView />}
             {activeTab === 'inventory' && <InventoryList />}
+            {activeTab === 'attendance' && (
+              <div className="panel-view">
+                <div className="view-header">
+                  <h2>Attendance Logs</h2>
+                  <p>Monitor employee login and logout activity by date.</p>
+                </div>
+
+                <div className="attendance-layout">
+                  <div className="attendance-sidebar">
+                    <Calendar 
+                      selectedDate={selectedDate} 
+                      onDateSelect={(date) => setSelectedDate(date.toLocaleDateString('sv-SE'))} 
+                    />
+                    <div className="selected-date-info">
+                        <h3>Selected Date</h3>
+                        <p>{new Date(selectedDate).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                    </div>
+                  </div>
+
+                  <div className="attendance-main">
+                    <div className="attendance-feed">
+                      {attendanceLogs.length === 0 ? (
+                        <div className="empty-state">
+                          <Clock size={48} />
+                          <p>No login/logout activity found for this date.</p>
+                        </div>
+                      ) : (
+                        attendanceLogs.map((log) => (
+                          <div key={log._id} className={`attendance-card ${log.action.toLowerCase()}`}>
+                            <div className="log-type-icon">
+                                {log.action === 'Login' ? <UserCheck size={20} /> : <UserX size={20} />}
+                            </div>
+                            <div className="log-info">
+                              <h4>{log.username}</h4>
+                              <p>{log.details}</p>
+                            </div>
+                            <div className="log-time-badge">
+                              {new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             {activeTab === 'requests' && <RequestsView />}
             {activeTab === 'alerts' && <AlertsView />}
             {activeTab === 'employee-logs' && <EmployeeLogsView />}

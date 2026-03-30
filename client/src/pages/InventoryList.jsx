@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Button from '../components/Button';
-import { Plus, Search, Filter, MoreVertical, RefreshCcw, CheckCircle, Trash2 } from 'lucide-react';
+import { Plus, Search, Filter, MoreVertical, RefreshCcw, CheckCircle, Trash2, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import AddChemicalModal from '../components/AddChemicalModal';
@@ -115,6 +115,11 @@ const InventoryList = () => {
           </Button>
         )}
       </header>
+
+      <div className="logout-warning-banner">
+        <AlertCircle size={20} />
+        <p><strong>IMPORTANT:</strong> It is mandatory to logout at the end of the day or when your work ends to ensure system security.</p>
+      </div>
 
       <div className="inventory-controls">
         <div className="search-bar">

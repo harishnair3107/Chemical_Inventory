@@ -39,6 +39,14 @@ const employeeLogin = async (req, res) => {
             return res.status(403).json({ message: 'Your account is pending approval by admin' });
         }
 
+        await logActivity({
+            user: user._id,
+            username: user.username,
+            action: 'Login',
+            details: `${user.username} logged into the system`,
+            role: 'employee'
+        });
+
         res.json({
             message: 'Login successful',
             user: { id: user._id, username: user.username, role: user.role }
@@ -181,6 +189,25 @@ const getActiveEmployees = async (req, res) => {
     }
 };
 
+const logoutEmployee = async (req, res) => {
+    try {
+        const { userId, username } = req.body;
+        if (!userId || !username) return res.status(400).json({ message: 'User details required' });
+
+        await logActivity({
+            user: userId,
+            username: username,
+            action: 'Logout',
+            details: `${username} logged out of the system`,
+            role: 'employee'
+        });
+
+        res.json({ message: 'Logout activity recorded' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = { 
     registerEmployee, 
     employeeLogin, 
@@ -190,5 +217,6 @@ module.exports = {
     approveEmployee, 
     rejectEmployee,
     removeEmployee,
+    logoutEmployee,
     getActiveEmployees
 };

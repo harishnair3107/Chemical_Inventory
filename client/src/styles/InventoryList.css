@@ -11,6 +11,24 @@
   gap: 0.5rem;
 }
 
+.logout-warning-banner {
+    background-color: #fef2f2;
+    border-left: 4px solid #ef4444;
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    color: #991b1b;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.logout-warning-banner p {
+    margin: 0;
+    font-size: 0.9375rem;
+}
+
 .inventory-controls {
   display: flex;
   gap: 1rem;
