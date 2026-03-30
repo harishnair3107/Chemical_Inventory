@@ -19,7 +19,8 @@ import {
   Package,
   CheckCircle,
   AlertTriangle,
-  Users
+  Users,
+  User
 } from 'lucide-react';
 import '../styles/AdminPortal.css';
 
@@ -308,24 +309,39 @@ const AdminPortal = () => {
       <div className="requests-container">
         {requests.length === 0 ? (
           <div className="empty-state">
-            <Clock size={48} />
-            <p>No pending requests.</p>
+            <div className="empty-icon-wrapper">
+                <Clock size={48} />
+            </div>
+            <h3>No Pending Access</h3>
+            <p>All employee registration requests have been processed.</p>
           </div>
         ) : (
-          <div className="requests-table">
+          <div className="requests-grid">
             {requests.map((req) => (
-              <div key={req._id} className="request-row">
-                <div className="user-details">
-                  <h4>{req.username}</h4>
-                  <span>{req.email}</span>
+              <div key={req._id} className="request-card">
+                <div className="card-badge">New Request</div>
+                <div className="card-body">
+                    <div className="user-avatar-main">
+                        <User size={32} />
+                    </div>
+                    <div className="user-info-main">
+                        <h4>{req.username}</h4>
+                        <p>{req.email}</p>
+                        <div className="request-meta">
+                            <Clock size={12} />
+                            <span>Requested {new Date(req.createdAt).toLocaleDateString()}</span>
+                        </div>
+                    </div>
                 </div>
-                <div className="row-actions">
-                  <Button onClick={() => handleApprove(req._id)} className="approve-btn">
-                    <UserCheck size={16} /> Approve
-                  </Button>
-                  <Button onClick={() => handleReject(req._id)} variant="danger" className="reject-btn">
-                    <UserX size={16} /> Reject
-                  </Button>
+                <div className="card-actions">
+                  <button onClick={() => handleApprove(req._id)} className="action-btn-approve" title="Approve Access">
+                    <UserCheck size={18} />
+                    <span>Approve</span>
+                  </button>
+                  <button onClick={() => handleReject(req._id)} className="action-btn-reject" title="Reject Request">
+                    <UserX size={18} />
+                    <span>Reject</span>
+                  </button>
                 </div>
               </div>
             ))}
