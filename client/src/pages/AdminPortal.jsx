@@ -113,7 +113,7 @@ const AdminPortal = () => {
   const fetchAttendance = async (date) => {
     if (!date) return;
     try {
-      const res = await axios.get(`http://localhost:5000/api/activity?role=admin&date=${date}&actions=Login,Logout&targetRole=employee`);
+      const res = await axios.get(`http://localhost:5000/api/attendance?date=${date}`);
       setAttendanceLogs(res.data);
     } catch (err) {
       console.error('Failed to fetch attendance');
@@ -571,7 +571,7 @@ const AdminPortal = () => {
                             </div>
                             <div className="log-info">
                               <h4>{log.username}</h4>
-                              <p>{log.details}</p>
+                              <span className="log-action-type">{log.action}</span>
                             </div>
                             <div className="log-time-badge">
                               {new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

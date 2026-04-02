@@ -1,6 +1,7 @@
 const User = require('./auth.model');
 const { sendOtpMail } = require('../../utils/mailer');
 const { logActivity } = require('../activity/activity.controller');
+const { logAttendance } = require('../attendance/attendance.controller');
 
 const ADMIN_EMAIL = 'harishnair3107@gmail.com';
 
@@ -44,6 +45,13 @@ const employeeLogin = async (req, res) => {
             username: user.username,
             action: 'Login',
             details: `${user.username} logged into the system`,
+            role: 'employee'
+        });
+
+        await logAttendance({
+            user: user._id,
+            username: user.username,
+            action: 'Login',
             role: 'employee'
         });
 
@@ -199,6 +207,13 @@ const logoutEmployee = async (req, res) => {
             username: username,
             action: 'Logout',
             details: `${username} logged out of the system`,
+            role: 'employee'
+        });
+
+        await logAttendance({
+            user: userId,
+            username: username,
+            action: 'Logout',
             role: 'employee'
         });
 

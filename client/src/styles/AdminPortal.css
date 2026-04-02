@@ -504,9 +504,22 @@
 }
 
 .log-info h4 {
-    margin: 0 0 0.25rem 0;
+    margin: 0 0 0.15rem 0;
     font-size: 1.0625rem;
 }
+
+.log-action-type {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    padding: 0.125rem 0.5rem;
+    border-radius: 4px;
+    background-color: var(--bg-secondary);
+}
+
+.login .log-action-type { color: #10b981; background: rgba(16, 185, 129, 0.1); }
+.logout .log-action-type { color: #6366f1; background: rgba(99, 102, 241, 0.1); }
 
 .log-info p {
     margin: 0;
