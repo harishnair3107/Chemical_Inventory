@@ -163,7 +163,7 @@ const AdminPortal = () => {
   const fetchAttendance = async (date) => {
     if (!date) return;
     try {
-      const res = await axios.get(`http://localhost:5000/api/attendance?date=${date}`);
+      const res = await api.get(`/attendance?date=${date}`);
       setAttendanceLogs(res.data);
     } catch (err) {
       console.error('Failed to fetch attendance');
@@ -173,7 +173,7 @@ const AdminPortal = () => {
   const fetchEmployeeLogs = async (userId) => {
     if (!userId) return;
     try {
-      const res = await axios.get(`http://localhost:5000/api/activity?role=employee&userId=${userId}`);
+      const res = await api.get(`/activity?role=employee&userId=${userId}`);
       setEmployeeActivities(res.data);
     } catch (err) {
       console.error('Failed to fetch employee logs');
@@ -262,7 +262,7 @@ const AdminPortal = () => {
 
   const handleApprove = async (id) => {
     try {
-      await axios.put(`http://localhost:5000/api/auth/approve/${id}`);
+      await api.put(`/auth/approve/${id}`);
       setRequests(requests.filter((req) => req._id !== id));
       fetchActivities(); // Refresh feed immediately
     } catch (err) {
@@ -272,7 +272,7 @@ const AdminPortal = () => {
 
   const handleReject = async (id) => {
     try {
-      await axios.delete(`http://localhost:5000/api/auth/reject/${id}`);
+      await api.delete(`/auth/reject/${id}`);
       setRequests(requests.filter((req) => req._id !== id));
       fetchActivities();
     } catch (err) {
@@ -283,7 +283,7 @@ const AdminPortal = () => {
   const handleRemoveEmployee = async (id) => {
     if (!window.confirm('Are you sure you want to remove this employee? All their activity logs will remain but they will lose access.')) return;
     try {
-      await axios.delete(`http://localhost:5000/api/auth/remove/${id}`);
+      await api.delete(`/auth/remove/${id}`);
       setEmployees(employees.filter(emp => emp._id !== id));
       if (selectedEmployee === id) {
         setSelectedEmployee('');
