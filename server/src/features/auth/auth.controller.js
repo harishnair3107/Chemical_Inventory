@@ -72,11 +72,22 @@ const employeeLogin = async (req, res) => {
 const adminLogin = async (req, res) => {
     try {
         const { email } = req.body;
-const adminEmail = await getAdminEmail();
-        if (email !== adminEmail) return res.status(401).json({ message: 'Access denied. Unauthorized email.' });
+        const adminEmail = await getAdminEmail();
+        
+        console.log(`--- ADMIN LOGIN DIAGNOSTIC ---`);
+        console.log(`Incoming Email: ${email}`);
+        console.log(`Master Admin Email (Settings): ${adminEmail}`);
+
+        if (email !== adminEmail) {
+            console.log(`❌ Email Mismatch: ${email} does not match master email.`);
+            return res.status(401).json({ message: 'Access denied. Unauthorized email (Master check failed).' });
+        }
+        
+        console.log(`✅ Email Verified. Proceeding with OTP generation...`);
 
         let user = await User.findOne({ email, role: 'admin' });
         if (!user) {
+            console.log(`Information: Creating new Admin record for ${email}`);
             // Create admin if not exists (only for this specific email)
             user = await User.create({
                 username: 'Admin',
@@ -94,10 +105,14 @@ const adminEmail = await getAdminEmail();
         await user.save();
 
         const sent = await sendOtpMail(email, otp);
-        if (!sent) return res.status(500).json({ message: 'Failed to send OTP' });
+        if (!sent) {
+            console.log(`❌ Final Mailer Failure for ${email}`);
+            return res.status(500).json({ message: 'Final Mailer failure. Please check server logs for Nodemailer details.' });
+        }
 
         res.json({ message: 'OTP sent to your email' });
     } catch (error) {
+        console.error('❌ Admin Login Error:', error);
         res.status(500).json({ message: error.message });
     }
 };
