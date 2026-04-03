@@ -21,7 +21,12 @@ import {
   CheckCircle,
   AlertTriangle,
   Users,
-  User
+  User,
+  Save,
+  RefreshCw,
+  Mail,
+  ShieldCheck,
+  Sliders
 } from 'lucide-react';
 import '../styles/AdminPortal.css';
 
@@ -40,13 +45,17 @@ const AdminPortal = () => {
   const [employeeActivities, setEmployeeActivities] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date().toLocaleDateString('sv-SE'));
   const [attendanceLogs, setAttendanceLogs] = useState([]);
+  const [settings, setSettings] = useState({ lowStockThreshold: 10, expiryAlertDays: 30, adminEmail: 'harishnair3107@gmail.com' });
 
   useEffect(() => {
     if (user && user.role === 'admin') {
       setStep('panel');
+      fetchSettings();
       fetchRequests();
       fetchActivities();
       fetchAlerts();
@@ -64,6 +73,47 @@ const AdminPortal = () => {
       return () => clearInterval(interval);
     }
   }, [user, selectedDate]);
+
+  const fetchSettings = async () => {
+    try {
+      const res = await axios.get('http://localhost:5000/api/settings');
+      setSettings(res.data);
+    } catch (err) {
+      console.error('Failed to fetch settings');
+    }
+  };
+
+  const handleUpdateSettings = async (e) => {
+    if (e) e.preventDefault();
+    console.log('UPDATING SETTINGS...', settings);
+    setIsUpdating(true);
+    try {
+      const res = await axios.put('http://localhost:5000/api/settings', settings);
+      setSettings(res.data);
+      setHasUnsavedChanges(false);
+      alert('Settings synchronized successfully');
+      fetchAlerts(); 
+    } catch (err) {
+      console.error('Update failed:', err);
+      alert('Adjustment sync failed');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleTestEmail = async () => {
+    console.log('TESTING EMAIL TO:', settings.adminEmail);
+    setLoading(true);
+    try {
+      await axios.post('http://localhost:5000/api/settings/test-mail', { email: settings.adminEmail });
+      alert('Test success: A diagnostic code has been dispatched to ' + settings.adminEmail);
+    } catch (err) {
+      console.error('Test email failed:', err);
+      alert('Diagnostic failure: Please check your SMTP credentials');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchRequests = async () => {
     try {
@@ -184,7 +234,7 @@ const AdminPortal = () => {
   const handleSendOtp = async (e) => {
     e.preventDefault();
     setError('');
-    if (email !== 'harishnair3107@gmail.com') {
+    if (email !== settings.adminEmail) {
       setError('ACCESS DENIED: Internal System Personnel Only');
       return;
     }
@@ -591,12 +641,122 @@ const AdminPortal = () => {
             {activeTab === 'settings' && (
               <div className="panel-view">
                 <div className="view-header">
-                    <h2>Settings</h2>
-                    <p>Configure system-wide parameters and admin preferences.</p>
+                    <h2>Advanced System Settings</h2>
+                    <p>Manage inventory automation, alert thresholds, and security preferences.</p>
                 </div>
-                <div className="placeholder-content">
-                    <AlertCircle size={40} />
-                    <p>Settings module is under active development.</p>
+                
+                <div className="settings-grid-layout">
+                  <div className="settings-module-card">
+                    <div className="card-icon-header inventory">
+                      <Package size={24} />
+                      <h3>Inventory Controls</h3>
+                    </div>
+                    <div className="card-content">
+                      <div className="setting-field">
+                        <div className="field-label-group">
+                          <label>Low Stock Alert</label>
+                          <span className="current-badge">{settings.lowStockThreshold} units</span>
+                        </div>
+                        <div className="field-input-wrapper">
+                          <Sliders size={18} className="field-icon" />
+                          <input 
+                            type="number" 
+                            value={settings.lowStockThreshold} 
+                            onChange={(e) => {
+                                setSettings({...settings, lowStockThreshold: parseInt(e.target.value)});
+                                setHasUnsavedChanges(true);
+                            }}
+                            className="premium-admin-input"
+                            min="1"
+                          />
+                        </div>
+                        <p className="field-hint">A primary notification will trigger when stock dips below this limit.</p>
+                      </div>
+
+                      <div className="setting-field">
+                        <div className="field-label-group">
+                          <label>Expiry Lead Time</label>
+                          <span className="current-badge">{settings.expiryAlertDays} days</span>
+                        </div>
+                        <div className="field-input-wrapper">
+                          <Clock size={18} className="field-icon" />
+                          <input 
+                            type="number" 
+                            value={settings.expiryAlertDays} 
+                            onChange={(e) => {
+                                setSettings({...settings, expiryAlertDays: parseInt(e.target.value)});
+                                setHasUnsavedChanges(true);
+                            }}
+                            className="premium-admin-input"
+                            min="1"
+                          />
+                        </div>
+                        <p className="field-hint">Defines how many days prior to expiry a warning is generated.</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="settings-module-card">
+                    <div className="card-icon-header system">
+                      <ShieldCheck size={24} />
+                      <h3>System Core</h3>
+                    </div>
+                    <div className="card-content">
+                      <div className="setting-field">
+                        <div className="field-label-group">
+                          <label>Administrative Email</label>
+                        </div>
+                        <div className="field-input-wrapper">
+                          <Mail size={18} className="field-icon" />
+                          <input 
+                            type="email" 
+                            value={settings.adminEmail} 
+                            onChange={(e) => {
+                                setSettings({...settings, adminEmail: e.target.value});
+                                setHasUnsavedChanges(true);
+                            }}
+                            className="premium-admin-input"
+                            placeholder="admin@gspl.com"
+                            required
+                          />
+                        </div>
+                        <p className="field-hint">The secure address for OTP verification and system-level alerts.</p>
+                      </div>
+
+                      <div className="smtp-verification">
+                        <h4>SMTP Health Check</h4>
+                        <p>Verify that your mail server is active and able to send codes.</p>
+                        <Button 
+                            type="button" 
+                            variant="secondary" 
+                            onClick={handleTestEmail}
+                            disabled={loading}
+                            className="test-btn"
+                        >
+                          {loading ? <RefreshCw className="animate-spin" size={16} /> : <Activity size={16} />}
+                          <span>Execute Diagnostic Email</span>
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="settings-footer-actions">
+                  {hasUnsavedChanges && (
+                    <div className="unsaved-notice">
+                      <AlertTriangle size={16} />
+                      <span>You have unsaved adjustments.</span>
+                    </div>
+                  )}
+                  <Button 
+                    onClick={handleUpdateSettings} 
+                    disabled={isUpdating || !hasUnsavedChanges} 
+                    variant="primary"
+                    className="save-settings-btn"
+                  >
+                    {isUpdating ? <RefreshCw className="animate-spin" size={20} /> : <Save size={20} />}
+                    <span>{isUpdating ? 'Synchronizing...' : 'Save Configuration'}</span>
+                  </Button>
                 </div>
               </div>
             )}
@@ -627,7 +787,7 @@ const AdminPortal = () => {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="e.g. harishnair3107@gmail.com"
+              placeholder={`e.g. ${settings.adminEmail}`}
               required
             />
           ) : (

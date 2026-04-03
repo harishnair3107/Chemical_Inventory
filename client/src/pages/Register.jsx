@@ -12,7 +12,20 @@ const Register = () => {
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [adminEmail, setAdminEmail] = useState('harishnair3107@gmail.com');
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchAdminEmail = async () => {
+      try {
+        const res = await axios.get('http://localhost:5000/api/settings');
+        setAdminEmail(res.data.adminEmail);
+      } catch (err) {
+        console.error('Failed to fetch admin email');
+      }
+    };
+    fetchAdminEmail();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -22,7 +35,7 @@ const Register = () => {
     try {
       const res = await axios.post('http://localhost:5000/api/auth/register', { username, email, password });
       setMessage(res.data.message);
-      if (email === 'harishnair3107@gmail.com') {
+      if (email === adminEmail) {
           setTimeout(() => navigate('/login'), 2000);
       }
     } catch (err) {

@@ -20,6 +20,7 @@ app.use('/api/auth', require('./features/auth/auth.routes'));
 app.use('/api/inventory', require('./features/inventory/inventory.routes'));
 app.use('/api/activity', require('./features/activity/activity.routes'));
 app.use('/api/attendance', require('./features/attendance/attendance.routes'));
+app.use('/api/settings', require('./features/settings/settings.routes'));
 
 // Health Check
 app.get('/', (req, res) => {

@@ -1,5 +1,6 @@
 const Chemical = require('./inventory.model');
 const InventoryUpdate = require('./update.model');
+const Settings = require('../settings/settings.model');
 const logActivity = require('../activity/activity.controller').logActivity;
 
 const getAllChemicals = async (req, res) => {
@@ -123,7 +124,6 @@ const recordUpdate = async (req, res) => {
             finalQuantity = previousQuantity - sold;
             details = `${username} recorded sale of ${chemical.name}. Initial: ${previousQuantity}, Sold: ${sold}, Remaining: ${finalQuantity}. Reason: ${reason}`;
         } else if (newQuantity !== undefined) {
-             // Fallback for direct update if still used
             finalQuantity = Number(newQuantity);
             if (role !== 'admin' && finalQuantity > previousQuantity) {
                 return res.status(400).json({ message: 'Employees cannot increase stock' });
@@ -137,10 +137,11 @@ const recordUpdate = async (req, res) => {
             return res.status(400).json({ message: 'Invalid quantity calculation' });
         }
 
+        const settings = await Settings.findOne() || { lowStockThreshold: 10 };
         chemical.quantity = finalQuantity;
         let finalStatus = 'Available';
         if (finalQuantity === 0) finalStatus = 'Out of Stock';
-        else if (finalQuantity < 10) finalStatus = 'Low Stock';
+        else if (finalQuantity < settings.lowStockThreshold) finalStatus = 'Low Stock';
 
         const updatedChemical = await Chemical.findByIdAndUpdate(
             req.params.id,
@@ -202,16 +203,17 @@ const updateStatus = async (req, res) => {
 
 const getAlerts = async (req, res) => {
     try {
+        const settings = await Settings.findOne() || { expiryAlertDays: 30, lowStockThreshold: 10 };
         const today = new Date();
-        const thirtyDaysFromNow = new Date();
-        thirtyDaysFromNow.setDate(today.getDate() + 30);
+        const alertRange = new Date();
+        alertRange.setDate(today.getDate() + settings.expiryAlertDays);
 
         const expiringSoon = await Chemical.find({
-            expiryDate: { $lte: thirtyDaysFromNow, $gt: today }
+            expiryDate: { $lte: alertRange, $gt: today }
         });
 
         const lowStock = await Chemical.find({
-            quantity: { $gt: 0, $lt: 10 }
+            quantity: { $gt: 0, $lt: settings.lowStockThreshold }
         });
 
         const emptyStock = await Chemical.find({

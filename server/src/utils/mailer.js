@@ -11,7 +11,7 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-const sendOtpMail = async (email, otp) => {
+const sendOtpMail = async (email, otp, subject = 'Admin Login OTP', body = 'Your OTP for Chemical Inventory Management Admin login is:') => {
     // Re-config just in case
     dotenv.config();
     
@@ -26,8 +26,8 @@ const sendOtpMail = async (email, otp) => {
     const mailOptions = {
         from: process.env.EMAIL_USER,
         to: email,
-        subject: 'Your Admin Login OTP',
-        text: `Your OTP for Chemical Inventory Management Admin login is: ${otp}. It will expire in 10 minutes.`
+        subject: subject,
+        text: `${body} ${otp}. It will expire in 10 minutes.`
     };
 
     try {

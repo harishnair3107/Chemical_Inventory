@@ -1,14 +1,19 @@
 const User = require('./auth.model');
+const Settings = require('../settings/settings.model');
 const { sendOtpMail } = require('../../utils/mailer');
 const { logActivity } = require('../activity/activity.controller');
 const { logAttendance } = require('../attendance/attendance.controller');
 
-const ADMIN_EMAIL = 'harishnair3107@gmail.com';
+const getAdminEmail = async () => {
+    const settings = await Settings.findOne();
+    return settings ? settings.adminEmail : 'harishnair3107@gmail.com';
+};
 
 const registerEmployee = async (req, res) => {
     try {
         const { username, password, email } = req.body;
-        if (email === ADMIN_EMAIL) return res.status(403).json({ message: 'Admin cannot register via this route.' });
+        const adminEmail = await getAdminEmail();
+        if (email === adminEmail) return res.status(403).json({ message: 'Admin cannot register via this route.' });
 
         const userExists = await User.findOne({ email });
         if (userExists) return res.status(400).json({ message: 'User already exists' });
@@ -67,14 +72,15 @@ const employeeLogin = async (req, res) => {
 const adminLogin = async (req, res) => {
     try {
         const { email } = req.body;
-        if (email !== ADMIN_EMAIL) return res.status(401).json({ message: 'Access denied. Unauthorized email.' });
+const adminEmail = await getAdminEmail();
+        if (email !== adminEmail) return res.status(401).json({ message: 'Access denied. Unauthorized email.' });
 
         let user = await User.findOne({ email, role: 'admin' });
         if (!user) {
             // Create admin if not exists (only for this specific email)
             user = await User.create({
                 username: 'Admin',
-                email: ADMIN_EMAIL,
+                email: adminEmail,
                 password: 'SYSTEM_MANAGED', // No password login
                 role: 'admin',
                 status: 'active'
@@ -99,7 +105,8 @@ const adminLogin = async (req, res) => {
 const verifyAdminOtp = async (req, res) => {
     try {
         const { email, otp } = req.body;
-        if (email !== ADMIN_EMAIL) return res.status(401).json({ message: 'Access denied' });
+        const adminEmail = await getAdminEmail();
+        if (email !== adminEmail) return res.status(401).json({ message: 'Access denied' });
 
         const user = await User.findOne({
             email,
@@ -223,6 +230,64 @@ const logoutEmployee = async (req, res) => {
     }
 };
 
+const forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+        const user = await User.findOne({ email });
+        
+        if (!user) return res.status(404).json({ message: 'User with this email does not exist' });
+
+        // Generate 6-digit OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        user.otp = otp;
+        user.otpExpires = Date.now() + 10 * 60 * 1000; // 10 mins
+        await user.save();
+
+        const sent = await sendOtpMail(
+            email, 
+            otp, 
+            'Password Reset Code', 
+            'Your password reset code for Chemical Inventory Management is:'
+        );
+        
+        if (!sent) return res.status(500).json({ message: 'Failed to send reset code' });
+
+        res.json({ message: 'Reset code sent to your email' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+const resetPassword = async (req, res) => {
+    try {
+        const { email, otp, newPassword } = req.body;
+        const user = await User.findOne({
+            email,
+            otp,
+            otpExpires: { $gt: Date.now() }
+        });
+
+        if (!user) return res.status(401).json({ message: 'Invalid or expired reset code' });
+
+        user.password = newPassword;
+        user.otp = undefined;
+        user.otpExpires = undefined;
+        await user.save();
+
+        await logActivity({
+            user: user._id,
+            username: user.username,
+            action: 'Password Reset',
+            details: `${user.username} reset their password`,
+            role: user.role
+        });
+
+        res.json({ message: 'Password updated successfully' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = { 
     registerEmployee, 
     employeeLogin, 
@@ -233,5 +298,7 @@ module.exports = {
     rejectEmployee,
     removeEmployee,
     logoutEmployee,
-    getActiveEmployees
+    getActiveEmployees,
+    forgotPassword,
+    resetPassword
 };

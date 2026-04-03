@@ -14,10 +14,9 @@ const getAttendance = async (req, res) => {
         let query = {};
 
         if (date) {
-            const startOfDay = new Date(date);
-            startOfDay.setHours(0, 0, 0, 0);
-            const endOfDay = new Date(date);
-            endOfDay.setHours(23, 59, 59, 999);
+            // date is in YYYY-MM-DD format from sv-SE locale
+            const startOfDay = new Date(`${date}T00:00:00.000Z`);
+            const endOfDay = new Date(`${date}T23:59:59.999Z`);
             query.createdAt = { $gte: startOfDay, $lte: endOfDay };
         }
 
