@@ -33,7 +33,7 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const res = await api.post('api/auth/login', { email, password });
+      const res = await api.post('/auth/login', { email, password });
       login(res.data.user);
       navigate(res.data.user.role === 'admin' ? '/admin' : '/inventory');
     } catch (err) {
@@ -50,7 +50,7 @@ const Login = () => {
     setLoading(true);
 
     try {
-      await api.post('api/auth/forgot-password', { email });
+      await api.post('/auth/forgot-password', { email });
       setResetStep('otp');
       setMessage('Password reset code sent to your email.');
     } catch (err) {
@@ -67,7 +67,7 @@ const Login = () => {
     setLoading(true);
 
     try {
-      await api.post('api/auth/reset-password', { email, otp, newPassword });
+      await api.post('/auth/reset-password', { email, otp, newPassword });
       setResetStep('success');
       setMessage('Password updated successfully!');
     } catch (err) {

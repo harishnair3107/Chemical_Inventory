@@ -33,7 +33,7 @@ const Register = () => {
     setMessage('');
     
     try {
-      const res = await api.post('api/auth/register', { username, email, password });
+      const res = await api.post('/auth/register', { username, email, password });
       setMessage(res.data.message);
       if (email === adminEmail) {
           setTimeout(() => navigate('/login'), 2000);

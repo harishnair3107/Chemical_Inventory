@@ -12,9 +12,22 @@ connectDB();
 const app = express();
 
 // Middleware
-const allowedOrigin = process.env.CLIENT_URL || '*';
+const allowedOrigins = [
+    process.env.CLIENT_URL,
+    'https://chemicalapp.netlify.app',
+    'http://localhost:5173'
+].filter(Boolean); // Remote null/undefined
+
 app.use(cors({
-    origin: allowedOrigin,
+    origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps or curl)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.includes('*')) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
     credentials: true
 }));

@@ -1,8 +1,11 @@
 import axios from 'axios';
 
-// The base URL defaults to localhost:5000 for development, 
-// but can be overridden by VITE_API_URL in production (e.g. Render/Vercel)
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// Automatic URL Formatting for Production/Development
+let rawUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+// Remove trailing slash if present
+rawUrl = rawUrl.endsWith('/') ? rawUrl.slice(0, -1) : rawUrl;
+// Append /api if missing (e.g., if user only provided the domain)
+const BASE_URL = rawUrl.endsWith('/api') ? rawUrl : `${rawUrl}/api`;
 
 const api = axios.create({
   baseURL: BASE_URL,
