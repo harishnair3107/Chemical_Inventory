@@ -234,10 +234,6 @@ const AdminPortal = () => {
   const handleSendOtp = async (e) => {
     e.preventDefault();
     setError('');
-    if (email !== settings.adminEmail) {
-      setError('ACCESS DENIED: Internal System Personnel Only');
-      return;
-    }
     setLoading(true);
     try {
       await axios.post('http://localhost:5000/api/auth/admin/login', { email });
