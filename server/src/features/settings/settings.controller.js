@@ -47,6 +47,7 @@ const testSmtp = async (req, res) => {
             res.status(500).json({ message: 'Failed to send test email' });
         }
     } catch (error) {
+        console.error('SERVER ERROR (testSmtp):', error);
         res.status(500).json({ message: error.message });
     }
 };
