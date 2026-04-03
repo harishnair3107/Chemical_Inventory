@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api';
 import Input from '../components/Input';
 import Button from '../components/Button';
 import { useAuth } from '../context/AuthContext';
@@ -18,7 +18,7 @@ const Register = () => {
   useEffect(() => {
     const fetchAdminEmail = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/settings');
+        const res = await api.get('/settings');
         setAdminEmail(res.data.adminEmail);
       } catch (err) {
         console.error('Failed to fetch admin email');
@@ -33,7 +33,7 @@ const Register = () => {
     setMessage('');
     
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/register', { username, email, password });
+      const res = await api.post('/auth/register', { username, email, password });
       setMessage(res.data.message);
       if (email === adminEmail) {
           setTimeout(() => navigate('/login'), 2000);

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Button from '../components/Button';
 import { Plus, Search, Filter, MoreVertical, RefreshCcw, CheckCircle, Trash2, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import axios from 'axios';
+import api from '../utils/api';
 import AddChemicalModal from '../components/AddChemicalModal';
 import UpdateStockModal from '../components/UpdateStockModal';
 import '../styles/InventoryList.css';
@@ -24,7 +24,7 @@ const InventoryList = () => {
 
   const fetchChemicals = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/inventory');
+      const res = await api.get('/inventory');
       setChemicals(res.data);
     } catch (err) {
       console.error('Failed to fetch chemicals');
@@ -35,7 +35,7 @@ const InventoryList = () => {
 
   const handleUpdateStatus = async (id, newStatus) => {
     try {
-      await axios.patch(`http://localhost:5000/api/inventory/${id}/status`, {
+      await api.patch(`/inventory/${id}/status`, {
         status: newStatus,
         userId: user.id,
         username: user.username
@@ -50,7 +50,7 @@ const InventoryList = () => {
     try {
       if (id) {
           // Edit mode
-          await axios.put(`http://localhost:5000/api/inventory/${id}`, {
+          await api.put(`/inventory/${id}`, {
               ...formData,
               userId: user.id,
               username: user.username,
@@ -58,7 +58,7 @@ const InventoryList = () => {
           });
       } else {
           // Add mode
-          await axios.post('http://localhost:5000/api/inventory', {
+          await api.post('/inventory', {
             ...formData,
             userId: user.id,
             username: user.username,
@@ -75,7 +75,7 @@ const InventoryList = () => {
 
   const handleUpdateStock = async (updateData) => {
     try {
-      await axios.post(`http://localhost:5000/api/inventory/${updatingChemical._id}/update`, {
+      await api.post(`/inventory/${updatingChemical._id}/update`, {
         ...updateData,
         userId: user.id,
         username: user.username,
@@ -92,7 +92,7 @@ const InventoryList = () => {
   const handleDeleteChemical = async (id) => {
     if (!window.confirm('Are you sure you want to delete this chemical?')) return;
     try {
-      await axios.delete(`http://localhost:5000/api/inventory/${id}`, {
+      await api.delete(`/inventory/${id}`, {
           data: { userId: user.id, username: user.username, role: user.role }
       });
       fetchChemicals();

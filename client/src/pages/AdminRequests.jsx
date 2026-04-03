@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import Button from '../components/Button';
 import { UserCheck, UserX, Clock } from 'lucide-react';
 import '../styles/AdminRequests.css';
@@ -10,7 +10,7 @@ const AdminRequests = () => {
 
   const fetchRequests = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/auth/pending');
+      const res = await api.get('/auth/pending');
       setRequests(res.data);
     } catch (err) {
       console.error('Failed to fetch requests');
@@ -25,7 +25,7 @@ const AdminRequests = () => {
 
   const handleApprove = async (id) => {
     try {
-      await axios.put(`http://localhost:5000/api/auth/approve/${id}`);
+      await api.put(`/auth/approve/${id}`);
       setRequests(requests.filter(req => req._id !== id));
     } catch (err) {
       alert('Failed to approve employee');
@@ -34,7 +34,7 @@ const AdminRequests = () => {
 
   const handleReject = async (id) => {
     try {
-      await axios.delete(`http://localhost:5000/api/auth/reject/${id}`);
+      await api.delete(`/auth/reject/${id}`);
       setRequests(requests.filter(req => req._id !== id));
     } catch (err) {
       alert('Failed to reject employee');

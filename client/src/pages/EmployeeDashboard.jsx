@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { Beaker, AlertTriangle, List, Activity, Clock, CheckCircle, Truck, CreditCard } from 'lucide-react';
 import '../styles/Dashboard.css';
@@ -27,7 +27,7 @@ const EmployeeDashboard = () => {
 
   const fetchStats = async () => {
     try {
-        const res = await axios.get('http://localhost:5000/api/inventory');
+        const res = await api.get('/inventory');
         const data = res.data;
         const today = new Date();
         const thirtyDays = new Date();
@@ -46,7 +46,7 @@ const EmployeeDashboard = () => {
 
   const fetchAlerts = async () => {
     try {
-        const res = await axios.get('http://localhost:5000/api/inventory/alerts');
+        const res = await api.get('/inventory/alerts');
         setAlerts(res.data);
     } catch (err) {
         console.error('Failed to fetch alerts');
@@ -55,7 +55,7 @@ const EmployeeDashboard = () => {
 
   const fetchActivities = async () => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/activity?role=employee&userId=${user.id}`);
+      const res = await api.get(`/activity?role=employee&userId=${user.id}`);
       setActivities(res.data);
     } catch (err) {
       console.error('Failed to fetch activities');
@@ -67,7 +67,7 @@ const EmployeeDashboard = () => {
         const updateData = {
             [field]: !currentValue
         };
-        await axios.patch(`http://localhost:5000/api/activity/${id}/status`, updateData);
+        await api.patch(`/activity/${id}/status`, updateData);
         fetchActivities(); // Refresh
     } catch (err) {
         alert('Failed to update activity status');

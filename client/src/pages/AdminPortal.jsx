@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import Input from '../components/Input';
 import Button from '../components/Button';
@@ -76,7 +76,7 @@ const AdminPortal = () => {
 
   const fetchSettings = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/settings');
+      const res = await api.get('settings');
       setSettings(res.data);
     } catch (err) {
       console.error('Failed to fetch settings');
@@ -88,7 +88,7 @@ const AdminPortal = () => {
     console.log('UPDATING SETTINGS...', settings);
     setIsUpdating(true);
     try {
-      const res = await axios.put('http://localhost:5000/api/settings', settings);
+      const res = await api.put('settings', settings);
       setSettings(res.data);
       setHasUnsavedChanges(false);
       alert('Settings synchronized successfully');
@@ -105,7 +105,7 @@ const AdminPortal = () => {
     console.log('TESTING EMAIL TO:', settings.adminEmail);
     setLoading(true);
     try {
-      await axios.post('http://localhost:5000/api/settings/test-mail', { email: settings.adminEmail });
+      await api.post('settings/test-mail', { email: settings.adminEmail });
       alert('Test success: A diagnostic code has been dispatched to ' + settings.adminEmail);
     } catch (err) {
       console.error('Test email failed:', err);
@@ -117,7 +117,7 @@ const AdminPortal = () => {
 
   const fetchRequests = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/auth/pending');
+      const res = await api.get('auth/pending');
       setRequests(res.data);
     } catch (err) {
       console.error('Failed to fetch requests');
@@ -126,7 +126,7 @@ const AdminPortal = () => {
 
   const fetchActivities = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/activity?role=admin');
+      const res = await api.get('activity?role=admin');
       setActivities(res.data);
     } catch (err) {
       console.error('Failed to fetch activities');
@@ -135,7 +135,7 @@ const AdminPortal = () => {
 
   const fetchAlerts = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/inventory/alerts');
+      const res = await api.get('inventory/alerts');
       setAlerts(res.data);
     } catch (err) {
       console.error('Failed to fetch alerts');
@@ -144,7 +144,7 @@ const AdminPortal = () => {
 
   const fetchStats = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/inventory');
+      const res = await api.get('inventory');
       setTotalChemicals(res.data.length);
     } catch (err) {
       console.error('Failed to fetch stats');
@@ -153,7 +153,7 @@ const AdminPortal = () => {
 
   const fetchEmployees = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/auth/employees');
+      const res = await api.get('auth/employees');
       setEmployees(res.data);
     } catch (err) {
       console.error('Failed to fetch employees');
@@ -202,7 +202,7 @@ const AdminPortal = () => {
 
   const handleDownloadReport = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/inventory/report');
+      const res = await api.get('inventory/report');
       const data = res.data.data;
       const csv = [
         ['Name', 'Formula', 'Quantity', 'Unit', 'Expiry Date', 'Location', 'Status'],
@@ -236,7 +236,7 @@ const AdminPortal = () => {
     setError('');
     setLoading(true);
     try {
-      await axios.post('http://localhost:5000/api/auth/admin/login', { email });
+      await api.post('auth/admin/login', { email });
       setStep('verify');
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to send OTP');
@@ -250,7 +250,7 @@ const AdminPortal = () => {
     setError('');
     setLoading(true);
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/admin/verify', { email, otp });
+      const res = await api.post('auth/admin/verify', { email, otp });
       login(res.data.user);
       setStep('panel');
     } catch (err) {
