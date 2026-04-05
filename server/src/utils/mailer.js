@@ -15,17 +15,20 @@ const sendOtpMail = async (email, otp, subject = 'Admin Login OTP', body = 'Your
     // Creating a fresh transporter inside the function call
     // This uses the 'service: gmail' preset which is often more reliable
     const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS
-        },
-        connectionTimeout: 10000, // 10 seconds
-        greetingTimeout: 10000,
-        socketTimeout: 30000,
-        debug: true,
-        logger: true
-    });
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false,
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+    },
+    family: 4,
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 30000,
+    debug: true,
+    logger: true
+});
 
     const mailOptions = {
         from: `"Chemical Inventory Admin" <${process.env.EMAIL_USER}>`,
