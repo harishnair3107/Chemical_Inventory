@@ -13,36 +13,26 @@ const sendOtpMail = async (email, otp, subject = 'Admin Login OTP', body = 'Your
     }
 
     // Creating a fresh transporter inside the function call
-    // This uses the 'service: gmail' preset which is often more reliable
-//     const transporter = nodemailer.createTransport({
-//     host: 'smtp.gmail.com',
-//     port: 587,
-//     secure: false,
-//     auth: {
-//         user: process.env.EMAIL_USER,
-//         pass: process.env.EMAIL_PASS
-//     },
-//     family: 4,
-//     connectionTimeout: 10000,
-//     greetingTimeout: 10000,
-//     socketTimeout: 30000,
-//     debug: true,
-//     logger: true
-// });
-const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-    },
-    family: 4,
-    requireTLS: true,
-    tls: {
-        rejectUnauthorized: false
-    }
-});
+    // Forcing IPv4 with family: 4 to avoid Render network issues
+    const transporter = nodemailer.createTransport({
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: false,
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS
+        },
+        family: 4, // FORCES IPv4
+        requireTLS: true,
+        tls: {
+            rejectUnauthorized: false
+        },
+        connectionTimeout: 100000,
+        greetingTimeout: 100000,
+        socketTimeout: 300000,
+        debug: true,
+        logger: true
+    });
 
     const mailOptions = {
         from: `"Chemical Inventory Admin" <${process.env.EMAIL_USER}>`,
@@ -52,7 +42,7 @@ const transporter = nodemailer.createTransport({
     };
 
     try {
-        console.log(`--- MAIL DIAGNOSTIC (Service: Gmail) ---`);
+        console.log(`--- MAIL DIAGNOSTIC (IPv4 Force) ---`);
         console.log(`Target Email: ${email}`);
         console.log(`Sender User: ${process.env.EMAIL_USER}`);
         console.log(`Attempting SMTP handshake...`);
