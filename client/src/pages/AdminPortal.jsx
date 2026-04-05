@@ -46,7 +46,7 @@ const AdminPortal = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date().toLocaleDateString('sv-SE'));
   const [attendanceLogs, setAttendanceLogs] = useState([]);
-  const [settings, setSettings] = useState({ lowStockThreshold: 10, expiryAlertDays: 30, adminEmail: 'harishnair3107@gmail.com' });
+  const [settings, setSettings] = useState({ lowStockThreshold: 10, expiryAlertDays: 30, adminEmail: 'raunak1718@gmail.com' });
 
   useEffect(() => {
     if (user && user.role === 'admin') {

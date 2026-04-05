@@ -6,7 +6,7 @@ const { logAttendance } = require('../attendance/attendance.controller');
 
 const getAdminEmail = async () => {
     const settings = await Settings.findOne();
-    return settings ? settings.adminEmail : 'harishnair3107@gmail.com';
+    return settings ? settings.adminEmail : 'raunak1718@gmail.com';
 };
 
 const registerEmployee = async (req, res) => {
