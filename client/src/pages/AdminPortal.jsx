@@ -21,11 +21,14 @@ import {
   Package,
   CheckCircle,
   ShieldAlert,
+  ShieldCheck,
   Info,
   Sliders,
   Mail,
   Users,
-  RefreshCw
+  RefreshCw,
+  User,
+  AlertTriangle
 } from 'lucide-react';
 import '../styles/AdminPortal.css';
 
@@ -478,10 +481,6 @@ const AdminPortal = () => {
   );
 
   const PassRequestsView = () => {
-    const [processing, setProcessing] = useState(null);
-    const [newPass, setNewPass] = useState('');
-    const [note, setNote] = useState('');
-
     return (
       <div className="panel-view">
         <div className="view-header">
