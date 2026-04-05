@@ -12,9 +12,10 @@ const transporter = nodemailer.createTransport({
         pass: process.env.EMAIL_PASS
     },
     tls: {
-        // This is often needed on some cloud platforms
         rejectUnauthorized: false
     },
+    // Force IPv4 to avoid ENETUNREACH errors on some cloud providers
+    addressFamily: 4,
     logger: true,
     debug: true
 });
