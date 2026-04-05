@@ -27,9 +27,9 @@ const sendOtpMail = async (email, otp, subject = 'Admin Login OTP', body = 'Your
         tls: {
             rejectUnauthorized: false
         },
-        connectionTimeout: 100000,
-        greetingTimeout: 100000,
-        socketTimeout: 300000,
+        // connectionTimeout: 100000,
+        // greetingTimeout: 100000,
+        // socketTimeout: 300000,
         debug: true,
         logger: true
     });
