@@ -3,23 +3,6 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
-const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true, // use SSL
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-    },
-    tls: {
-        rejectUnauthorized: false
-    },
-    // Force IPv4 to avoid ENETUNREACH errors on some cloud providers
-    addressFamily: 4,
-    logger: true,
-    debug: true
-});
-
 const sendOtpMail = async (email, otp, subject = 'Admin Login OTP', body = 'Your OTP for Chemical Inventory Management Admin login is:') => {
     // Reload environment variables for safety
     dotenv.config();
@@ -29,6 +12,21 @@ const sendOtpMail = async (email, otp, subject = 'Admin Login OTP', body = 'Your
         return false;
     }
 
+    // Creating a fresh transporter inside the function call
+    // This uses the 'service: gmail' preset which is often more reliable
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS
+        },
+        connectionTimeout: 10000, // 10 seconds
+        greetingTimeout: 10000,
+        socketTimeout: 30000,
+        debug: true,
+        logger: true
+    });
+
     const mailOptions = {
         from: `"Chemical Inventory Admin" <${process.env.EMAIL_USER}>`,
         to: email,
@@ -37,12 +35,11 @@ const sendOtpMail = async (email, otp, subject = 'Admin Login OTP', body = 'Your
     };
 
     try {
-        console.log(`--- MAIL DIAGNOSTIC ---`);
+        console.log(`--- MAIL DIAGNOSTIC (Service: Gmail) ---`);
         console.log(`Target Email: ${email}`);
         console.log(`Sender User: ${process.env.EMAIL_USER}`);
         console.log(`Attempting SMTP handshake...`);
         
-        // Use the global transporter or re-verify if needed
         await transporter.verify();
         await transporter.sendMail(mailOptions);
         
