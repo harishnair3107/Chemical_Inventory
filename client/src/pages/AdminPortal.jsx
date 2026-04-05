@@ -19,13 +19,8 @@ import {
   Download,
   Package,
   CheckCircle,
-  AlertTriangle,
-  Users,
-  User,
-  Save,
-  RefreshCw,
-  Mail,
-  ShieldCheck,
+  ShieldAlert,
+  Info,
   Sliders
 } from 'lucide-react';
 import '../styles/AdminPortal.css';
@@ -41,6 +36,7 @@ const AdminPortal = () => {
   const [alerts, setAlerts] = useState({ lowStock: [], expiringSoon: [], emptyStock: [] });
   const [totalChemicals, setTotalChemicals] = useState(0);
   const [employees, setEmployees] = useState([]);
+  const [passRequests, setPassRequests] = useState([]);
   const [selectedEmployee, setSelectedEmployee] = useState('');
   const [employeeActivities, setEmployeeActivities] = useState([]);
   const [error, setError] = useState('');
@@ -57,6 +53,7 @@ const AdminPortal = () => {
       setStep('panel');
       fetchSettings();
       fetchRequests();
+      fetchPassRequests();
       fetchActivities();
       fetchAlerts();
       fetchStats();
@@ -65,6 +62,7 @@ const AdminPortal = () => {
 
       const interval = setInterval(() => {
         fetchRequests();
+        fetchPassRequests();
         fetchActivities();
         fetchAlerts();
         fetchStats();
@@ -101,17 +99,23 @@ const AdminPortal = () => {
     }
   };
 
-  const handleTestEmail = async () => {
-    console.log('TESTING EMAIL TO:', settings.adminEmail);
-    setLoading(true);
+  const fetchPassRequests = async () => {
     try {
-      await api.post('/settings/test-mail', { email: settings.adminEmail });
-      alert('Test success: A diagnostic code has been dispatched to ' + settings.adminEmail);
+      const res = await api.get('/auth/reset-requests');
+      setPassRequests(res.data);
     } catch (err) {
-      console.error('Test email failed:', err);
-      alert('Diagnostic failure: Please check your SMTP credentials');
-    } finally {
-      setLoading(false);
+      console.error('Failed to fetch password requests');
+    }
+  };
+
+  const handleCompletePassReset = async (id, newPassword, adminNote) => {
+    try {
+      await api.put(`/auth/complete-reset/${id}`, { newPassword, adminNote });
+      setPassRequests(passRequests.filter(r => r._id !== id));
+      alert('Password updated successfully');
+      fetchActivities();
+    } catch (err) {
+      alert('Failed to update password');
     }
   };
 
@@ -465,6 +469,223 @@ const AdminPortal = () => {
     </div>
   );
 
+  const PassRequestsView = () => {
+    const [processing, setProcessing] = useState(null);
+    const [newPass, setNewPass] = useState('');
+    const [note, setNote] = useState('');
+
+    return (
+      <div className="panel-view">
+        <div className="view-header">
+          <h2>Password Reset Requests</h2>
+          <p>Manually update employee passwords and provide a secure note.</p>
+        </div>
+
+        <div className="requests-container">
+          {passRequests.length === 0 ? (
+            <div className="empty-state">
+              <ShieldCheck size={48} />
+              <p>No pending password reset requests.</p>
+            </div>
+          ) : (
+            <div className="requests-list">
+              {passRequests.map(req => (
+                <div key={req._id} className="pass-request-card">
+                  <div className="req-user-info">
+                    <strong>{req.username}</strong>
+                    <span>{req.email}</span>
+                    <small>Requested: {new Date(req.createdAt).toLocaleString()}</small>
+                  </div>
+                  
+                  {processing === req._id ? (
+                    <div className="req-process-form">
+                      <Input 
+                        label="New Password" 
+                        value={newPass} 
+                        onChange={e => setNewPass(e.target.value)}
+                        placeholder="Enter secure password"
+                      />
+                      <Input 
+                        label="Note to Employee" 
+                        value={note} 
+                        onChange={e => setNote(e.target.value)}
+                        placeholder="e.g. Please use this for your next login."
+                      />
+                      <div className="form-actions">
+                        <Button onClick={() => handleCompletePassReset(req._id, newPass, note)}>Update & Close</Button>
+                        <Button variant="secondary" onClick={() => setProcessing(null)}>Cancel</Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <Button onClick={() => {
+                        setProcessing(req._id);
+                        setNewPass('User123!'); // Default suggestion
+                        setNote('Password has been updated per your request.');
+                    }}>
+                      <RefreshCw size={16} /> Process Reset
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const NoticeBoardView = () => (
+    <div className="panel-view">
+      <div className="view-header">
+        <h2>System Notice & Maintenance</h2>
+        <p>Important information regarding the Chemical Inventory Management System.</p>
+      </div>
+
+      <div className="notice-content-card">
+        <div className="notice-icon"><Info size={32} /></div>
+        <div className="notice-body">
+          <h3>Why Nodemailer is Disabled</h3>
+          <p>
+            We have transitioned from automated email (Nodemailer) to a manual administrative process for the following reasons:
+          </p>
+          <ul>
+            <li><strong>Free Hosting Limitations:</strong> Outbound SMTP traffic (Port 465/587) is often restricted on free tiers of deployment sites like Render to prevent spam.</li>
+            <li><strong>Infrastructure Costs:</strong> Reliable automated email services (like SendGrid or high-tier Gmail API) require expensive monthly subscriptions that exceed our current bootstrap budget.</li>
+            <li><strong>Reliability:</strong> Manual resets ensure 100% arrival rate as the Admin directly manages the credentials, bypassing common "Spam" folder issues.</li>
+          </ul>
+          <p className="notice-footer">
+            Admin login is now secured via <strong>encrypted password</strong> instead of OTP for the same infrastructure reasons.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+
+  const ReportsView = () => (
+    <div className="panel-view">
+      <div className="view-header">
+        <h2>System Reports</h2>
+        <p>Export comprehensive inventory and activity data.</p>
+      </div>
+
+      <div className="reports-container">
+        <div className="report-card">
+          <div className="report-info">
+            <FileText size={40} />
+            <div>
+              <h3>Inventory Snapshot</h3>
+              <p>Current stock levels, formulas, and locations.</p>
+            </div>
+          </div>
+          <Button onClick={handleDownloadReport}>
+            <Download size={18} /> Download CSV
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const SettingsView = () => (
+    <div className="panel-view">
+      <div className="view-header">
+        <h2>Advanced System Settings</h2>
+        <p>Manage inventory automation, alert thresholds, and security preferences.</p>
+      </div>
+      
+      <div className="settings-grid-layout">
+        <div className="settings-module-card">
+          <div className="card-icon-header inventory">
+            <Package size={24} />
+            <h3>Inventory Controls</h3>
+          </div>
+          <div className="card-content">
+            <div className="setting-field">
+              <div className="field-label-group">
+                <label>Low Stock Alert</label>
+                <span className="current-badge">{settings.lowStockThreshold} units</span>
+              </div>
+              <div className="field-input-wrapper">
+                <Sliders size={18} className="field-icon" />
+                <input 
+                  type="number" 
+                  value={settings.lowStockThreshold} 
+                  onChange={(e) => {
+                      setSettings({...settings, lowStockThreshold: parseInt(e.target.value)});
+                      setHasUnsavedChanges(true);
+                  }}
+                  className="premium-admin-input"
+                  min="1"
+                />
+              </div>
+            </div>
+
+            <div className="setting-field">
+              <div className="field-label-group">
+                <label>Expiry Lead Time</label>
+                <span className="current-badge">{settings.expiryAlertDays} days</span>
+              </div>
+              <div className="field-input-wrapper">
+                <Clock size={18} className="field-icon" />
+                <input 
+                  type="number" 
+                  value={settings.expiryAlertDays} 
+                  onChange={(e) => {
+                      setSettings({...settings, expiryAlertDays: parseInt(e.target.value)});
+                      setHasUnsavedChanges(true);
+                  }}
+                  className="premium-admin-input"
+                  min="1"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="settings-module-card">
+          <div className="card-icon-header system">
+            <Shield size={24} color="var(--accent-primary)" />
+            <h3>System Status</h3>
+          </div>
+          <div className="card-content">
+            <div className="setting-field">
+              <label>Admin Notification Email</label>
+              <div className="field-input-wrapper">
+                <Mail size={18} className="field-icon" />
+                <input 
+                  type="email" 
+                  value={settings.adminEmail} 
+                  onChange={(e) => {
+                      setSettings({...settings, adminEmail: e.target.value});
+                      setHasUnsavedChanges(true);
+                  }}
+                  className="premium-admin-input"
+                  disabled
+                />
+              </div>
+              <p className="field-hint">Master email is currently locked to {settings.adminEmail}</p>
+            </div>
+            
+            <div className="status-badge-group" style={{ marginTop: '1.5rem' }}>
+              <div className="status-item">
+                 <div className="status-dot online"></div>
+                 <span>Database: Active</span>
+              </div>
+              <div className="status-item">
+                 <div className="status-dot offline"></div>
+                 <span>Nodemailer: Offline</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="settings-footer-actions">
+        {hasUnsavedChanges && <span className="unsaved-notice"><AlertTriangle size={16} /> Unsaved changes</span>}
+        <Button onClick={handleUpdateSettings} disabled={!hasUnsavedChanges}>Save Changes</Button>
+      </div>
+    </div>
+  );
+
   const EmployeeLogsView = () => (
     <div className="panel-view">
       <div className="view-header">
@@ -531,33 +752,19 @@ const AdminPortal = () => {
     </div>
   );
 
-  const ReportsView = () => (
-    <div className="panel-view">
-      <div className="view-header">
-        <h2>System Reports</h2>
-        <p>Export comprehensive inventory and activity data.</p>
-      </div>
-
-      <div className="reports-container">
-        <div className="report-card">
-          <div className="report-info">
-            <FileText size={40} />
-            <div>
-              <h3>Inventory Snapshot</h3>
-              <p>Current stock levels, formulas, and locations.</p>
-            </div>
-          </div>
-          <Button onClick={handleDownloadReport}>
-            <Download size={18} /> Download CSV
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-
-  if (step === 'panel') {
+  if (!user || user.role !== 'admin') {
     return (
-      <div className={`admin-panel-layout ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+      <div className="admin-login-redirect" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', gap: '1rem', background: 'var(--bg-primary)' }}>
+        <Shield size={64} color="var(--accent-primary)" />
+        <h1>Access Restricted</h1>
+        <p>Please sign in via the secure portal to access the Admin Panel.</p>
+        <Button onClick={() => navigate('/login')}>Return to Login</Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`admin-panel-layout ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
         <Sidebar 
           isOpen={sidebarOpen} 
           toggleSidebar={() => setSidebarOpen(!sidebarOpen)} 
@@ -583,6 +790,7 @@ const AdminPortal = () => {
           <div className="admin-page-content">
             {activeTab === 'dashboard' && <DashboardView />}
             {activeTab === 'inventory' && <InventoryList />}
+            {activeTab === 'pass-requests' && <PassRequestsView />}
             {activeTab === 'attendance' && (
               <div className="panel-view">
                 <div className="view-header">
@@ -634,177 +842,11 @@ const AdminPortal = () => {
             {activeTab === 'alerts' && <AlertsView />}
             {activeTab === 'employee-logs' && <EmployeeLogsView />}
             {activeTab === 'reports' && <ReportsView />}
-            {activeTab === 'settings' && (
-              <div className="panel-view">
-                <div className="view-header">
-                    <h2>Advanced System Settings</h2>
-                    <p>Manage inventory automation, alert thresholds, and security preferences.</p>
-                </div>
-                
-                <div className="settings-grid-layout">
-                  <div className="settings-module-card">
-                    <div className="card-icon-header inventory">
-                      <Package size={24} />
-                      <h3>Inventory Controls</h3>
-                    </div>
-                    <div className="card-content">
-                      <div className="setting-field">
-                        <div className="field-label-group">
-                          <label>Low Stock Alert</label>
-                          <span className="current-badge">{settings.lowStockThreshold} units</span>
-                        </div>
-                        <div className="field-input-wrapper">
-                          <Sliders size={18} className="field-icon" />
-                          <input 
-                            type="number" 
-                            value={settings.lowStockThreshold} 
-                            onChange={(e) => {
-                                setSettings({...settings, lowStockThreshold: parseInt(e.target.value)});
-                                setHasUnsavedChanges(true);
-                            }}
-                            className="premium-admin-input"
-                            min="1"
-                          />
-                        </div>
-                        <p className="field-hint">A primary notification will trigger when stock dips below this limit.</p>
-                      </div>
-
-                      <div className="setting-field">
-                        <div className="field-label-group">
-                          <label>Expiry Lead Time</label>
-                          <span className="current-badge">{settings.expiryAlertDays} days</span>
-                        </div>
-                        <div className="field-input-wrapper">
-                          <Clock size={18} className="field-icon" />
-                          <input 
-                            type="number" 
-                            value={settings.expiryAlertDays} 
-                            onChange={(e) => {
-                                setSettings({...settings, expiryAlertDays: parseInt(e.target.value)});
-                                setHasUnsavedChanges(true);
-                            }}
-                            className="premium-admin-input"
-                            min="1"
-                          />
-                        </div>
-                        <p className="field-hint">Defines how many days prior to expiry a warning is generated.</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="settings-module-card">
-                    <div className="card-icon-header system">
-                      <ShieldCheck size={24} />
-                      <h3>System Core</h3>
-                    </div>
-                    <div className="card-content">
-                      <div className="setting-field">
-                        <div className="field-label-group">
-                          <label>Administrative Email</label>
-                        </div>
-                        <div className="field-input-wrapper">
-                          <Mail size={18} className="field-icon" />
-                          <input 
-                            type="email" 
-                            value={settings.adminEmail} 
-                            onChange={(e) => {
-                                setSettings({...settings, adminEmail: e.target.value});
-                                setHasUnsavedChanges(true);
-                            }}
-                            className="premium-admin-input"
-                            placeholder="admin@gspl.com"
-                            required
-                          />
-                        </div>
-                        <p className="field-hint">The secure address for OTP verification and system-level alerts.</p>
-                      </div>
-
-                      <div className="smtp-verification">
-                        <h4>SMTP Health Check</h4>
-                        <p>Verify that your mail server is active and able to send codes.</p>
-                        <Button 
-                            type="button" 
-                            variant="secondary" 
-                            onClick={handleTestEmail}
-                            disabled={loading}
-                            className="test-btn"
-                        >
-                          {loading ? <RefreshCw className="animate-spin" size={16} /> : <Activity size={16} />}
-                          <span>Execute Diagnostic Email</span>
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="settings-footer-actions">
-                  {hasUnsavedChanges && (
-                    <div className="unsaved-notice">
-                      <AlertTriangle size={16} />
-                      <span>You have unsaved adjustments.</span>
-                    </div>
-                  )}
-                  <Button 
-                    onClick={handleUpdateSettings} 
-                    disabled={isUpdating || !hasUnsavedChanges} 
-                    variant="primary"
-                    className="save-settings-btn"
-                  >
-                    {isUpdating ? <RefreshCw className="animate-spin" size={20} /> : <Save size={20} />}
-                    <span>{isUpdating ? 'Synchronizing...' : 'Save Configuration'}</span>
-                  </Button>
-                </div>
-              </div>
-            )}
+            {activeTab === 'notice-board' && <NoticeBoardView />}
+            {activeTab === 'settings' && <SettingsView />}
           </div>
         </main>
       </div>
-    );
-  }
-
-  return (
-    <div className="admin-login-container">
-      <div className="admin-login-card">
-        <div className="admin-icon">
-          <Shield size={48} />
-        </div>
-        <h1>Admin Vault</h1>
-        <p>{step === 'login' ? 'Enter admin email to access secure area' : 'Enter the 6-digit decryption code'}</p>
-
-        {error && <div className="error-msg alert-error">
-            <AlertCircle size={18} />
-            {error}
-        </div>}
-
-        <form onSubmit={step === 'login' ? handleSendOtp : handleVerifyOtp}>
-          {step === 'login' ? (
-            <Input
-              label="Personnel Email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder={`e.g. ${settings.adminEmail}`}
-              required
-            />
-          ) : (
-            <Input
-              label="Decryption Code"
-              type="text"
-              value={otp}
-              onChange={(e) => setOtp(e.target.value)}
-              placeholder="000000"
-              required
-            />
-          )}
-          <Button type="submit" disabled={loading} className="admin-submit-btn">
-            {loading ? 'Processing...' : step === 'login' ? 'Request Access' : 'Authenticate'}
-          </Button>
-        </form>
-        {step === 'verify' && (
-          <button className="back-btn" onClick={() => setStep('login')}>Cancel Authorization</button>
-        )}
-      </div>
-    </div>
   );
 };
 

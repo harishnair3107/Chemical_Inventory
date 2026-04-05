@@ -1,6 +1,6 @@
 const User = require('./auth.model');
 const Settings = require('../settings/settings.model');
-const { sendOtpMail } = require('../../utils/mailer');
+const ResetRequest = require('./resetRequest.model');
 const { logActivity } = require('../activity/activity.controller');
 const { logAttendance } = require('../attendance/attendance.controller');
 
@@ -71,75 +71,52 @@ const employeeLogin = async (req, res) => {
 
 const adminLogin = async (req, res) => {
     try {
-        const { email } = req.body;
+        const { email, password } = req.body;
         const adminEmail = await getAdminEmail();
         
         console.log(`--- ADMIN LOGIN DIAGNOSTIC ---`);
         console.log(`Incoming Email: ${email}`);
-        console.log(`Master Admin Email (Settings): ${adminEmail}`);
-
+        
         if (email !== adminEmail) {
-            console.log(`❌ Email Mismatch: ${email} does not match master email.`);
-            return res.status(401).json({ message: 'Access denied. Unauthorized email (Master check failed).' });
+            return res.status(401).json({ message: 'Access denied. Unauthorized email.' });
         }
         
-        console.log(`✅ Email Verified. Proceeding with OTP generation...`);
-
         let user = await User.findOne({ email, role: 'admin' });
+        
+        // Auto-initialization logic for first-time or transition
         if (!user) {
             console.log(`Information: Creating new Admin record for ${email}`);
-            // Create admin if not exists (only for this specific email)
             user = await User.create({
                 username: 'Admin',
                 email: adminEmail,
-                password: 'SYSTEM_MANAGED', // No password login
+                password: 'admin123', // Default password for transition
                 role: 'admin',
                 status: 'active'
             });
+        } else if (user.password === 'SYSTEM_MANAGED') {
+            // Update legacy admin to have a usable password
+            user.password = 'admin123';
+            await user.save();
         }
 
-        // Generate 6-digit OTP
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        user.otp = otp;
-        user.otpExpires = Date.now() + 10 * 60 * 1000; // 10 mins
-        await user.save();
-
-        const sent = await sendOtpMail(email, otp);
-        if (!sent) {
-            console.log(`❌ Final Mailer Failure for ${email}`);
-            return res.status(500).json({ message: 'Final Mailer failure. Please check server logs for Nodemailer details.' });
+        if (user.password !== password) {
+            return res.status(401).json({ message: 'Invalid Admin password' });
         }
 
-        res.json({ message: 'OTP sent to your email' });
-    } catch (error) {
-        console.error('❌ Admin Login Error:', error);
-        res.status(500).json({ message: error.message });
-    }
-};
-
-const verifyAdminOtp = async (req, res) => {
-    try {
-        const { email, otp } = req.body;
-        const adminEmail = await getAdminEmail();
-        if (email !== adminEmail) return res.status(401).json({ message: 'Access denied' });
-
-        const user = await User.findOne({
-            email,
-            otp,
-            otpExpires: { $gt: Date.now() }
+        await logActivity({
+            user: user._id,
+            username: user.username,
+            action: 'Login',
+            details: `Admin logged into the system via password`,
+            role: 'admin'
         });
-
-        if (!user) return res.status(401).json({ message: 'Invalid or expired OTP' });
-
-        user.otp = undefined;
-        user.otpExpires = undefined;
-        await user.save();
 
         res.json({
             message: 'Admin Login successful',
             user: { id: user._id, username: user.username, role: user.role }
         });
     } catch (error) {
+        console.error('❌ Admin Login Error:', error);
         res.status(500).json({ message: error.message });
     }
 };
@@ -252,52 +229,73 @@ const forgotPassword = async (req, res) => {
         
         if (!user) return res.status(404).json({ message: 'User with this email does not exist' });
 
-        // Generate 6-digit OTP
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        user.otp = otp;
-        user.otpExpires = Date.now() + 10 * 60 * 1000; // 10 mins
-        await user.save();
+        // Check if there is already a pending request
+        const existingRequest = await ResetRequest.findOne({ userId: user._id, status: 'pending' });
+        if (existingRequest) {
+            return res.status(400).json({ message: 'A reset request is already pending with the admin.' });
+        }
 
-        const sent = await sendOtpMail(
-            email, 
-            otp, 
-            'Password Reset Code', 
-            'Your password reset code for Chemical Inventory Management is:'
-        );
-        
-        if (!sent) return res.status(500).json({ message: 'Failed to send reset code' });
+        await ResetRequest.create({
+            userId: user._id,
+            username: user.username,
+            email: user.email
+        });
 
-        res.json({ message: 'Reset code sent to your email' });
+        res.json({ message: 'Password reset request sent to Admin. Please check back later or contact Admin directly.' });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
 
-const resetPassword = async (req, res) => {
+const getResetRequests = async (req, res) => {
     try {
-        const { email, otp, newPassword } = req.body;
-        const user = await User.findOne({
-            email,
-            otp,
-            otpExpires: { $gt: Date.now() }
-        });
+        const requests = await ResetRequest.find({ status: 'pending' }).sort({ createdAt: -1 });
+        res.json(requests);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
 
-        if (!user) return res.status(401).json({ message: 'Invalid or expired reset code' });
+const completeResetRequest = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { newPassword, adminNote } = req.body;
 
+        const request = await ResetRequest.findById(id);
+        if (!request) return res.status(404).json({ message: 'Request not found' });
+
+        const user = await User.findById(request.userId);
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        // Update password
         user.password = newPassword;
-        user.otp = undefined;
-        user.otpExpires = undefined;
         await user.save();
+
+        // Mark request as completed
+        request.status = 'completed';
+        request.adminNote = adminNote;
+        request.newPasswordSet = newPassword; // Store to show employee if needed
+        await request.save();
 
         await logActivity({
             user: user._id,
-            username: user.username,
-            action: 'Password Reset',
-            details: `${user.username} reset their password`,
-            role: user.role
+            username: 'Admin',
+            action: 'Password Manual Reset',
+            details: `Admin reset password for ${user.username} with note: ${adminNote}`,
+            role: 'admin'
         });
 
-        res.json({ message: 'Password updated successfully' });
+        res.json({ message: 'Password updated and request completed.' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+const getEmployeeResetStatus = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const request = await ResetRequest.findOne({ userId }).sort({ updatedAt: -1 });
+        res.json(request);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -307,7 +305,6 @@ module.exports = {
     registerEmployee, 
     employeeLogin, 
     adminLogin, 
-    verifyAdminOtp, 
     getPendingEmployees, 
     approveEmployee, 
     rejectEmployee,
@@ -315,5 +312,7 @@ module.exports = {
     logoutEmployee,
     getActiveEmployees,
     forgotPassword,
-    resetPassword
+    getResetRequests,
+    completeResetRequest,
+    getEmployeeResetStatus
 };
