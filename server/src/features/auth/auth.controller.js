@@ -72,29 +72,26 @@ const employeeLogin = async (req, res) => {
 const adminLogin = async (req, res) => {
     try {
         const { email, password } = req.body;
-        const adminEmail = await getAdminEmail();
-        
-        console.log(`--- ADMIN LOGIN DIAGNOSTIC ---`);
-        console.log(`Incoming Email: ${email}`);
-        
-        if (email !== adminEmail) {
-            return res.status(401).json({ message: 'Access denied. Unauthorized email.' });
-        }
-        
         let user = await User.findOne({ email, role: 'admin' });
         
-        // Auto-initialization logic for first-time or transition
+        // Auto-initialization logic: If no user found, check if it's the master adminEmail to create first record
         if (!user) {
-            console.log(`Information: Creating new Admin record for ${email}`);
-            user = await User.create({
-                username: 'Admin',
-                email: adminEmail,
-                password: 'admin123', // Default password for transition
-                role: 'admin',
-                status: 'active'
-            });
-        } else if (user.password === 'SYSTEM_MANAGED') {
-            // Update legacy admin to have a usable password
+            const adminEmail = await getAdminEmail();
+            if (email === adminEmail) {
+                console.log(`Information: Initializing master Admin record for ${email}`);
+                user = await User.create({
+                    username: 'Admin',
+                    email: adminEmail,
+                    password: 'admin123',
+                    role: 'admin',
+                    status: 'active'
+                });
+            } else {
+                return res.status(401).json({ message: 'Access denied. Unauthorized admin credentials.' });
+            }
+        } 
+        
+        if (user.password === 'SYSTEM_MANAGED') {
             user.password = 'admin123';
             await user.save();
         }
