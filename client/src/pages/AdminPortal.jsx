@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import Input from '../components/Input';
@@ -21,12 +22,16 @@ import {
   CheckCircle,
   ShieldAlert,
   Info,
-  Sliders
+  Sliders,
+  Mail,
+  Users,
+  RefreshCw
 } from 'lucide-react';
 import '../styles/AdminPortal.css';
 
 const AdminPortal = () => {
   const { user, login, logout } = useAuth();
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [step, setStep] = useState('login'); // login, verify, panel
@@ -47,6 +52,9 @@ const AdminPortal = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toLocaleDateString('sv-SE'));
   const [attendanceLogs, setAttendanceLogs] = useState([]);
   const [settings, setSettings] = useState({ lowStockThreshold: 10, expiryAlertDays: 30, adminEmail: 'raunak1718@gmail.com' });
+  const [processing, setProcessing] = useState(null);
+  const [newPass, setNewPass] = useState('');
+  const [note, setNote] = useState('');
 
   useEffect(() => {
     if (user && user.role === 'admin') {
