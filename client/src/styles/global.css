@@ -35,6 +35,12 @@ a {
   padding: 2rem;
 }
 
+@media (max-width: 768px) {
+  .main-content {
+    padding: 1rem;
+  }
+}
+
 .page {
   animation: fadeIn 0.3s ease-in-out;
 }

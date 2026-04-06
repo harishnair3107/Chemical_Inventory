@@ -206,3 +206,15 @@
   border: 1px solid rgba(34, 197, 94, 0.2);
 }
 
+@media (max-width: 480px) {
+  .login-card {
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+    border: none;
+    box-shadow: none;
+  }
+  .login-container {
+    align-items: flex-start;
+    padding-top: 2rem;
+  }
+}

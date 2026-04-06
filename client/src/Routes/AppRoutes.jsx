@@ -8,6 +8,8 @@ import Login from '../pages/Login';
 import Register from '../pages/Register';
 import AdminPortal from '../pages/AdminPortal';
 import ProtectedRoute from '../components/ProtectedRoute';
+import PrivacyPolicy from '../pages/PrivacyPolicy';
+import TermsOfService from '../pages/TermsOfService';
 
 const AppRoutes = () => {
     const { user } = useAuth();
@@ -36,6 +38,10 @@ const AppRoutes = () => {
                     <InventoryList />
                 </ProtectedRoute>
             } />
+
+            {/* Legal Pages */}
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/terms" element={<TermsOfService />} />
 
             {/* Default Catch-all */}
             <Route path="*" element={<Navigate to="/" replace />} />

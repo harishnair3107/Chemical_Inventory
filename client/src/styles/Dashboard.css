@@ -210,3 +210,17 @@
   font-size: 0.75rem;
   margin: 0;
 }
+
+@media (max-width: 768px) {
+  .dashboard-sections {
+    grid-template-columns: 1fr;
+  }
+  .activity-main-info {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .alert-card-small {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

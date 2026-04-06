@@ -62,8 +62,21 @@
   background-color: var(--bg);
   border: 1px solid var(--border);
   border-radius: 0.75rem;
-  overflow: hidden;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
+
+@media (max-width: 768px) {
+  .inventory-page .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  .inventory-controls {
+    flex-direction: column;
+  }
+}
+
 
 .inventory-table {
   width: 100%;
