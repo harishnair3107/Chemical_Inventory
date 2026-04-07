@@ -91,6 +91,21 @@ const EmployeeDashboard = () => {
       } catch (err) {}
   };
 
+  const handleConfirmPayment = async (saleId) => {
+      const method = window.prompt("Enter Payment Method (UPI, Cheque, Cash):");
+      if (!method) return;
+      if (!['UPI', 'Cheque', 'Cash'].includes(method)) {
+          alert('Invalid method. Must be UPI, Cheque, or Cash');
+          return;
+      }
+      try {
+          await api.patch(`/sales/${saleId}/payment`, { isPaymentReceived: true, paymentMethod: method });
+          fetchSales();
+      } catch (err) {
+          alert('Failed to update payment status');
+      }
+  };
+
   const handleUpdateTaskStatus = async (id, status, revertReason = '') => {
       try {
           await api.patch(`/task/${id}/status`, { status, revertReason, userId: user.id });
@@ -215,6 +230,14 @@ const EmployeeDashboard = () => {
                                           }}>
                                               {sale.isPaymentReceived ? 'Paid' : 'Pending'}
                                           </span>
+                                          {!sale.isPaymentReceived && (
+                                              <button 
+                                                 onClick={() => handleConfirmPayment(sale._id)}
+                                                 style={{ display: 'block', marginTop: '0.5rem', fontSize: '0.75rem', padding: '0.2rem 0.5rem', borderRadius: '4px', border: '1px solid currentColor', background: 'transparent', cursor: 'pointer', color: 'var(--accent-primary)' }}
+                                              >
+                                                 Mark Paid
+                                              </button>
+                                          )}
                                       </td>
                                       <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{new Date(sale.createdAt).toLocaleDateString()}</td>
                                   </tr>

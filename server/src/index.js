@@ -41,6 +41,7 @@ app.use('/api/attendance', require('./features/attendance/attendance.routes'));
 app.use('/api/settings', require('./features/settings/settings.routes'));
 app.use('/api/task', require('./features/task/task.routes'));
 app.use('/api/sales', require('./features/sales/sale.routes'));
+app.use('/api/expenses', require('./features/expense/expense.routes'));
 
 // Health Check
 app.get('/', (req, res) => {

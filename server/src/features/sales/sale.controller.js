@@ -1,12 +1,12 @@
 const Sale = require('./sale.model');
+const Expense = require('../expense/expense.model');
 
 const getSalesLogs = async (req, res) => {
     try {
-        const { userId } = req.query;
+        const { userId, paymentMethod } = req.query;
         let query = {};
-        if (userId) {
-            query.userId = userId;
-        }
+        if (userId) query.userId = userId;
+        if (paymentMethod && paymentMethod !== 'All') query.paymentMethod = paymentMethod;
 
         const sales = await Sale.find(query).sort({ createdAt: -1 });
         res.json(sales);
@@ -17,29 +17,58 @@ const getSalesLogs = async (req, res) => {
 
 const getSalesStats = async (req, res) => {
     try {
-        const { userId } = req.query;
+        const { userId, month, year, paymentMethod } = req.query;
         let query = {};
-        if (userId) {
-            query.userId = userId;
-        }
+        if (userId) query.userId = userId;
+        if (paymentMethod && paymentMethod !== 'All') query.paymentMethod = paymentMethod;
 
         const now = new Date();
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        const startOfYear = new Date(now.getFullYear(), 0, 1);
+        const selectedYear = year ? parseInt(year) : now.getFullYear();
+        const selectedMonth = month ? parseInt(month) : now.getMonth();
 
-        const monthlySales = await Sale.aggregate([
-            { $match: { ...query, createdAt: { $gte: startOfMonth }, isPaymentReceived: true } },
+        // 1. Monthly Filter Configuration
+        // Create range for specifically selected month/year
+        const startOfMonth = new Date(selectedYear, selectedMonth, 1);
+        const endOfMonth = new Date(selectedYear, selectedMonth + 1, 0, 23, 59, 59);
+
+        // 2. Yearly Filter Configuration
+        const startOfYear = new Date(selectedYear, 0, 1);
+        const endOfYear = new Date(selectedYear, 11, 31, 23, 59, 59);
+
+        // 3. Aggregate Monthly Sales (Paid only)
+        const monthlySalesObj = await Sale.aggregate([
+            { $match: { ...query, isPaymentReceived: true, createdAt: { $gte: startOfMonth, $lte: endOfMonth } } },
             { $group: { _id: null, total: { $sum: "$amount" } } }
         ]);
+        const monthlySales = monthlySalesObj[0]?.total || 0;
 
-        const yearlySales = await Sale.aggregate([
-            { $match: { ...query, createdAt: { $gte: startOfYear }, isPaymentReceived: true } },
+        // 4. Aggregate Yearly Sales (Paid only)
+        const yearlySalesObj = await Sale.aggregate([
+            { $match: { ...query, isPaymentReceived: true, createdAt: { $gte: startOfYear, $lte: endOfYear } } },
             { $group: { _id: null, total: { $sum: "$amount" } } }
         ]);
+        const yearlySales = yearlySalesObj[0]?.total || 0;
+
+        // 5. Calculate Expenses
+        // Monthly Expenses = Salary + Electricity for the specific month
+        const monthlyExpensesObj = await Expense.aggregate([
+            { $match: { date: { $gte: startOfMonth, $lte: endOfMonth }, category: { $in: ['Salary', 'Electricity'] } } },
+            { $group: { _id: null, total: { $sum: "$amount" } } }
+        ]);
+        const monthlyExpenses = monthlyExpensesObj[0]?.total || 0;
+
+        // Yearly Expenses = All expenses (Salary, Electricity, Water, Land) for the specific year
+        const yearlyExpensesObj = await Expense.aggregate([
+            { $match: { date: { $gte: startOfYear, $lte: endOfYear } } },
+            { $group: { _id: null, total: { $sum: "$amount" } } }
+        ]);
+        const yearlyExpenses = yearlyExpensesObj[0]?.total || 0;
 
         res.json({
-            monthly: monthlySales[0]?.total || 0,
-            yearly: yearlySales[0]?.total || 0
+            monthlySales,
+            yearlySales,
+            monthlyProfit: monthlySales - monthlyExpenses,
+            yearlyProfit: yearlySales - yearlyExpenses
         });
     } catch (error) {
         res.status(500).json({ message: error.message });

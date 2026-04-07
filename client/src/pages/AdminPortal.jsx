@@ -63,8 +63,16 @@ const AdminPortal = () => {
   
   const [tasks, setTasks] = useState([]);
   const [salesLogs, setSalesLogs] = useState([]);
-  const [salesStats, setSalesStats] = useState({ monthly: 0, yearly: 0 });
+  const [salesStats, setSalesStats] = useState({ monthlySales: 0, yearlySales: 0, monthlyProfit: 0, yearlyProfit: 0 });
   const [taskForm, setTaskForm] = useState({ title: '', description: '', assignedTo: '', deadline: '' });
+  
+  const [expenses, setExpenses] = useState([]);
+  const [expenseForm, setExpenseForm] = useState({ category: 'Salary', amount: '', date: new Date().toISOString().substring(0, 10), notes: '' });
+  
+  const now = new Date();
+  const [salesMonth, setSalesMonth] = useState(now.getMonth().toString());
+  const [salesYear, setSalesYear] = useState(now.getFullYear().toString());
+  const [salesPaymentMethod, setSalesPaymentMethod] = useState('All');
 
   useEffect(() => {
     if (user && user.role === 'admin') {
@@ -79,6 +87,7 @@ const AdminPortal = () => {
       fetchAttendance(selectedDate);
       fetchTasks();
       fetchSales();
+      fetchExpenses();
 
       const interval = setInterval(() => {
         fetchRequests();
@@ -89,10 +98,11 @@ const AdminPortal = () => {
         fetchAttendance(selectedDate);
         fetchTasks();
         fetchSales();
+        fetchExpenses();
       }, 5000);
       return () => clearInterval(interval);
     }
-  }, [user, selectedDate]);
+  }, [user, selectedDate, salesMonth, salesYear, salesPaymentMethod]);
 
   const fetchSettings = async () => {
     try {
@@ -215,13 +225,32 @@ const AdminPortal = () => {
 
   const fetchSales = async () => {
     try {
+      const qs = `?month=${salesMonth}&year=${salesYear}&paymentMethod=${salesPaymentMethod}`;
       const [logs, stats] = await Promise.all([
-        api.get('/sales/logs'),
-        api.get('/sales/stats')
+        api.get(`/sales/logs${qs}`),
+        api.get(`/sales/stats${qs}`)
       ]);
       setSalesLogs(logs.data);
       setSalesStats(stats.data);
     } catch(err) {}
+  };
+
+  const fetchExpenses = async () => {
+    try {
+       const res = await api.get('/expenses');
+       setExpenses(res.data);
+    } catch(err) {}
+  };
+
+  const handleAddExpense = async (e) => {
+      e.preventDefault();
+      try {
+          await api.post('/expenses', expenseForm);
+          setExpenseForm({ category: 'Salary', amount: '', date: new Date().toISOString().substring(0, 10), notes: '' });
+          fetchExpenses();
+          fetchSales();
+          alert('Expense recorded successfully');
+      } catch (err) { alert('Failed to record expense'); }
   };
 
   const handleAssignTask = async (e) => {
@@ -802,9 +831,37 @@ const AdminPortal = () => {
       <div className="panel-view">
           <div className="view-header">
               <h2>Global Sales Dashboard</h2>
-              <p>Monitor revenue and sales records across all employees.</p>
+              <p>Monitor revenue, profits, and sales records across all employees.</p>
           </div>
           
+          <div className="sales-filters" style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap', backgroundColor: 'var(--bg-primary)', padding: '1rem', borderRadius: '12px' }}>
+              <div style={{ flex: 1, minWidth: '150px' }}>
+                  <label className="input-label" style={{ marginBottom: '0.25rem', display: 'block' }}>Month</label>
+                  <select className="input-field" value={salesMonth} onChange={e => setSalesMonth(e.target.value)} style={{ width: '100%', padding: '0.5rem' }}>
+                      <option value="0">January</option><option value="1">February</option><option value="2">March</option>
+                      <option value="3">April</option><option value="4">May</option><option value="5">June</option>
+                      <option value="6">July</option><option value="7">August</option><option value="8">September</option>
+                      <option value="9">October</option><option value="10">November</option><option value="11">December</option>
+                  </select>
+              </div>
+              <div style={{ flex: 1, minWidth: '150px' }}>
+                  <label className="input-label" style={{ marginBottom: '0.25rem', display: 'block' }}>Year</label>
+                  <select className="input-field" value={salesYear} onChange={e => setSalesYear(e.target.value)} style={{ width: '100%', padding: '0.5rem' }}>
+                      {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
+                  </select>
+              </div>
+              <div style={{ flex: 1, minWidth: '150px' }}>
+                  <label className="input-label" style={{ marginBottom: '0.25rem', display: 'block' }}>Payment Method</label>
+                  <select className="input-field" value={salesPaymentMethod} onChange={e => setSalesPaymentMethod(e.target.value)} style={{ width: '100%', padding: '0.5rem' }}>
+                      <option value="All">All Methods</option>
+                      <option value="UPI">UPI</option>
+                      <option value="Cash">Cash</option>
+                      <option value="Cheque">Cheque</option>
+                      <option value="N/A">Pending/Not Paid</option>
+                  </select>
+              </div>
+          </div>
+
           <div className="admin-stats-grid" style={{ marginBottom: '2rem' }}>
               <div className="admin-stat-card">
                   <div className="stat-icon-wrapper" style={{ backgroundColor: '#10b98120', color: '#10b981' }}>
@@ -812,7 +869,7 @@ const AdminPortal = () => {
                   </div>
                   <div className="stat-content">
                       <span className="stat-label">Monthly Sales</span>
-                      <span className="stat-value">₹{salesStats.monthly.toLocaleString()}</span>
+                      <span className="stat-value">₹{salesStats.monthlySales?.toLocaleString()}</span>
                   </div>
               </div>
               <div className="admin-stat-card">
@@ -821,7 +878,29 @@ const AdminPortal = () => {
                   </div>
                   <div className="stat-content">
                       <span className="stat-label">Yearly Sales</span>
-                      <span className="stat-value">₹{salesStats.yearly.toLocaleString()}</span>
+                      <span className="stat-value">₹{salesStats.yearlySales?.toLocaleString()}</span>
+                  </div>
+              </div>
+              <div className="admin-stat-card" style={{ borderColor: salesStats.monthlyProfit < 0 ? '#ef4444' : 'var(--border-color)' }}>
+                  <div className="stat-icon-wrapper" style={{ backgroundColor: salesStats.monthlyProfit < 0 ? '#fee2e2' : '#f0fdf4', color: salesStats.monthlyProfit < 0 ? '#ef4444' : '#166534' }}>
+                      <Activity size={20} />
+                  </div>
+                  <div className="stat-content">
+                      <span className="stat-label">Monthly Profit</span>
+                      <span className="stat-value" style={{ color: salesStats.monthlyProfit < 0 ? '#ef4444' : 'inherit' }}>
+                          {salesStats.monthlyProfit < 0 ? '-' : ''}₹{Math.abs(salesStats.monthlyProfit).toLocaleString()}
+                      </span>
+                  </div>
+              </div>
+              <div className="admin-stat-card" style={{ borderColor: salesStats.yearlyProfit < 0 ? '#ef4444' : 'var(--border-color)' }}>
+                  <div className="stat-icon-wrapper" style={{ backgroundColor: salesStats.yearlyProfit < 0 ? '#fee2e2' : '#f0fdf4', color: salesStats.yearlyProfit < 0 ? '#ef4444' : '#166534' }}>
+                      <Activity size={20} />
+                  </div>
+                  <div className="stat-content">
+                      <span className="stat-label">Yearly Profit</span>
+                      <span className="stat-value" style={{ color: salesStats.yearlyProfit < 0 ? '#ef4444' : 'inherit' }}>
+                          {salesStats.yearlyProfit < 0 ? '-' : ''}₹{Math.abs(salesStats.yearlyProfit).toLocaleString()}
+                      </span>
                   </div>
               </div>
           </div>
@@ -829,7 +908,7 @@ const AdminPortal = () => {
           <div className="sales-logs-section">
               <h3>Comprehensive Sales Log</h3>
               {salesLogs.length === 0 ? (
-                  <p className="no-data">No sales logs found.</p>
+                  <p className="no-data">No sales logs found for this filter.</p>
               ) : (
                   <div className="table-responsive" style={{ overflowX: 'auto', backgroundColor: 'var(--bg-primary)', borderRadius: '12px', marginTop: '1rem' }}>
                       <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
@@ -858,6 +937,72 @@ const AdminPortal = () => {
                                           </span>
                                       </td>
                                       <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{new Date(sale.createdAt).toLocaleDateString()}</td>
+                                  </tr>
+                              ))}
+                          </tbody>
+                      </table>
+                  </div>
+              )}
+          </div>
+      </div>
+  );
+
+  const ExpensesView = () => (
+      <div className="panel-view">
+          <div className="view-header">
+              <h2>Expense Tracking</h2>
+              <p>Log salaries and bills to accurately calculate business profits.</p>
+          </div>
+          
+          <form onSubmit={handleAddExpense} style={{ backgroundColor: 'var(--bg-primary)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border-color)', marginBottom: '2rem' }}>
+              <h3 style={{ margin: '0 0 1rem 0' }}>Record Expense</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <label className="input-label" style={{ marginBottom: '0.5rem' }}>Category</label>
+                      <select className="input-field" value={expenseForm.category} onChange={e => setExpenseForm({...expenseForm, category: e.target.value})} required style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                          <option value="Salary">Employee Salary (Monthly)</option>
+                          <option value="Electricity">Electricity Bill (Monthly)</option>
+                          <option value="Water">Water Bill (Yearly)</option>
+                          <option value="Land Tax">Land Tax (Yearly)</option>
+                      </select>
+                  </div>
+                  <div>
+                      <Input type="number" label="Amount (₹)" value={expenseForm.amount} onChange={e => setExpenseForm({...expenseForm, amount: e.target.value})} required min="0" />
+                  </div>
+                  <div>
+                      <Input type="date" label="Date Applied" value={expenseForm.date} onChange={e => setExpenseForm({...expenseForm, date: e.target.value})} required />
+                  </div>
+                  <div>
+                      <Input type="text" label="Notes (Optional)" value={expenseForm.notes} onChange={e => setExpenseForm({...expenseForm, notes: e.target.value})} />
+                  </div>
+                  <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end' }}>
+                      <Button type="submit">Add Expense</Button>
+                  </div>
+              </div>
+          </form>
+
+          <div className="expenses-board">
+              <h3>Recorded Expenses</h3>
+              {expenses.length === 0 ? (
+                  <p className="no-data">No expenses recorded yet.</p>
+              ) : (
+                  <div className="table-responsive" style={{ overflowX: 'auto', backgroundColor: 'var(--bg-primary)', borderRadius: '12px', marginTop: '1rem' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                          <thead>
+                              <tr style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)' }}>
+                                  <th style={{ padding: '1rem' }}>Category</th>
+                                  <th style={{ padding: '1rem' }}>Amount</th>
+                                  <th style={{ padding: '1rem' }}>Date</th>
+                                  <th style={{ padding: '1rem' }}>Notes</th>
+                              </tr>
+                          </thead>
+                          <tbody>
+                              {expenses.map(exp => (
+                                  <tr key={exp._id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                                      <td style={{ padding: '1rem', fontWeight: '500' }}>{exp.category}</td>
+                                      <td style={{ padding: '1rem', fontWeight: 'bold' }}>₹{exp.amount}</td>
+                                      <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{new Date(exp.date).toLocaleDateString()}</td>
+                                      <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{exp.notes || '-'}</td>
                                   </tr>
                               ))}
                           </tbody>
@@ -1013,6 +1158,7 @@ const AdminPortal = () => {
                 </div>
               </div>
             )}
+            {activeTab === 'expenses' && <ExpensesView />}
             {activeTab === 'sales' && <SalesView />}
             {activeTab === 'tasks' && <TasksView />}
             {activeTab === 'requests' && <RequestsView />}
