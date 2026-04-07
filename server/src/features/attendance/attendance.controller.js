@@ -10,7 +10,7 @@ const logAttendance = async (data) => {
 
 const getAttendance = async (req, res) => {
     try {
-        const { date } = req.query;
+        const { date, userId } = req.query;
         let query = {};
 
         if (date) {
@@ -18,6 +18,10 @@ const getAttendance = async (req, res) => {
             const startOfDay = new Date(`${date}T00:00:00.000Z`);
             const endOfDay = new Date(`${date}T23:59:59.999Z`);
             query.createdAt = { $gte: startOfDay, $lte: endOfDay };
+        }
+
+        if (userId) {
+            query.user = userId;
         }
 
         const logs = await Attendance.find(query)

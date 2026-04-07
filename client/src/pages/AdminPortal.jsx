@@ -28,7 +28,9 @@ import {
   Users,
   RefreshCw,
   User,
-  AlertTriangle
+  AlertTriangle,
+  IndianRupee,
+  ClipboardList
 } from 'lucide-react';
 import '../styles/AdminPortal.css';
 
@@ -58,6 +60,11 @@ const AdminPortal = () => {
   const [processing, setProcessing] = useState(null);
   const [newPass, setNewPass] = useState('');
   const [note, setNote] = useState('');
+  
+  const [tasks, setTasks] = useState([]);
+  const [salesLogs, setSalesLogs] = useState([]);
+  const [salesStats, setSalesStats] = useState({ monthly: 0, yearly: 0 });
+  const [taskForm, setTaskForm] = useState({ title: '', description: '', assignedTo: '', deadline: '' });
 
   useEffect(() => {
     if (user && user.role === 'admin') {
@@ -70,6 +77,8 @@ const AdminPortal = () => {
       fetchStats();
       fetchEmployees();
       fetchAttendance(selectedDate);
+      fetchTasks();
+      fetchSales();
 
       const interval = setInterval(() => {
         fetchRequests();
@@ -78,6 +87,8 @@ const AdminPortal = () => {
         fetchAlerts();
         fetchStats();
         fetchAttendance(selectedDate);
+        fetchTasks();
+        fetchSales();
       }, 5000);
       return () => clearInterval(interval);
     }
@@ -193,6 +204,34 @@ const AdminPortal = () => {
     } catch (err) {
       console.error('Failed to fetch employee logs');
     }
+  };
+
+  const fetchTasks = async () => {
+    try {
+      const res = await api.get('/task');
+      setTasks(res.data);
+    } catch(err) {}
+  };
+
+  const fetchSales = async () => {
+    try {
+      const [logs, stats] = await Promise.all([
+        api.get('/sales/logs'),
+        api.get('/sales/stats')
+      ]);
+      setSalesLogs(logs.data);
+      setSalesStats(stats.data);
+    } catch(err) {}
+  };
+
+  const handleAssignTask = async (e) => {
+    e.preventDefault();
+    try {
+      await api.post('/task', { ...taskForm, assignedTo: taskForm.assignedTo, assignedBy: user.id });
+      setTaskForm({ title: '', description: '', assignedTo: '', deadline: '' });
+      fetchTasks();
+      alert('Task assigned successfully!');
+    } catch(err) { alert('Failed to assign task'); }
   };
 
   const downloadEmployeeLogs = () => {
@@ -759,6 +798,135 @@ const AdminPortal = () => {
     </div>
   );
 
+  const SalesView = () => (
+      <div className="panel-view">
+          <div className="view-header">
+              <h2>Global Sales Dashboard</h2>
+              <p>Monitor revenue and sales records across all employees.</p>
+          </div>
+          
+          <div className="admin-stats-grid" style={{ marginBottom: '2rem' }}>
+              <div className="admin-stat-card">
+                  <div className="stat-icon-wrapper" style={{ backgroundColor: '#10b98120', color: '#10b981' }}>
+                      <IndianRupee size={20} />
+                  </div>
+                  <div className="stat-content">
+                      <span className="stat-label">Monthly Sales</span>
+                      <span className="stat-value">₹{salesStats.monthly.toLocaleString()}</span>
+                  </div>
+              </div>
+              <div className="admin-stat-card">
+                  <div className="stat-icon-wrapper" style={{ backgroundColor: '#3b82f620', color: '#3b82f6' }}>
+                      <IndianRupee size={20} />
+                  </div>
+                  <div className="stat-content">
+                      <span className="stat-label">Yearly Sales</span>
+                      <span className="stat-value">₹{salesStats.yearly.toLocaleString()}</span>
+                  </div>
+              </div>
+          </div>
+
+          <div className="sales-logs-section">
+              <h3>Comprehensive Sales Log</h3>
+              {salesLogs.length === 0 ? (
+                  <p className="no-data">No sales logs found.</p>
+              ) : (
+                  <div className="table-responsive" style={{ overflowX: 'auto', backgroundColor: 'var(--bg-primary)', borderRadius: '12px', marginTop: '1rem' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                          <thead>
+                              <tr style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)' }}>
+                                  <th style={{ padding: '1rem' }}>Employee</th>
+                                  <th style={{ padding: '1rem' }}>Item</th>
+                                  <th style={{ padding: '1rem' }}>Qty</th>
+                                  <th style={{ padding: '1rem' }}>Amount</th>
+                                  <th style={{ padding: '1rem' }}>Method</th>
+                                  <th style={{ padding: '1rem' }}>Status</th>
+                                  <th style={{ padding: '1rem' }}>Date</th>
+                              </tr>
+                          </thead>
+                          <tbody>
+                              {salesLogs.map(sale => (
+                                  <tr key={sale._id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                                      <td style={{ padding: '1rem', fontWeight: '500' }}>{sale.username}</td>
+                                      <td style={{ padding: '1rem' }}>{sale.chemicalName}</td>
+                                      <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{sale.quantity}</td>
+                                      <td style={{ padding: '1rem', fontWeight: 'bold' }}>₹{sale.amount}</td>
+                                      <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{sale.paymentMethod}</td>
+                                      <td style={{ padding: '1rem' }}>
+                                          <span style={{ padding: '0.25rem 0.5rem', borderRadius: '999px', fontSize: '0.85rem', backgroundColor: sale.isPaymentReceived ? '#10b98120' : '#f59e0b20', color: sale.isPaymentReceived ? '#10b981' : '#f59e0b' }}>
+                                              {sale.isPaymentReceived ? 'Paid' : 'Pending'}
+                                          </span>
+                                      </td>
+                                      <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{new Date(sale.createdAt).toLocaleDateString()}</td>
+                                  </tr>
+                              ))}
+                          </tbody>
+                      </table>
+                  </div>
+              )}
+          </div>
+      </div>
+  );
+
+  const TasksView = () => (
+      <div className="panel-view">
+          <div className="view-header">
+              <h2>Task Management</h2>
+              <p>Assign tasks to employees and monitor progress.</p>
+          </div>
+          
+          <form onSubmit={handleAssignTask} className="task-assignment-form" style={{ backgroundColor: 'var(--bg-primary)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border-color)', marginBottom: '2rem' }}>
+              <h3 style={{ margin: '0 0 1rem 0' }}>Assign New Task</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <Input label="Task Title" value={taskForm.title} onChange={e => setTaskForm({...taskForm, title: e.target.value})} required />
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <label className="input-label" style={{ marginBottom: '0.5rem' }}>Assign To</label>
+                      <select className="input-field" value={taskForm.assignedTo} onChange={e => setTaskForm({...taskForm, assignedTo: e.target.value})} required style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                          <option value="">Select Employee</option>
+                          {employees.map(emp => <option key={emp._id} value={emp._id}>{emp.username}</option>)}
+                      </select>
+                  </div>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                      <label className="input-label" style={{ marginBottom: '0.5rem' }}>Description</label>
+                      <textarea className="input-field" value={taskForm.description} onChange={e => setTaskForm({...taskForm, description: e.target.value})} required style={{ width: '100%', minHeight: '80px', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)' }} />
+                  </div>
+                  <div>
+                      <Input type="date" label="Deadline" value={taskForm.deadline} onChange={e => setTaskForm({...taskForm, deadline: e.target.value})} required />
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+                      <Button type="submit" style={{ width: '100%' }}>Assign Task</Button>
+                  </div>
+              </div>
+          </form>
+
+          <div className="tasks-board">
+              <h3>All Assigned Tasks</h3>
+              {tasks.length === 0 ? (
+                  <p className="no-data">No tasks have been assigned yet.</p>
+              ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
+                      {tasks.map(task => (
+                          <div key={task._id} className="task-card" style={{ padding: '1.5rem', backgroundColor: 'var(--bg-primary)', borderRadius: '12px', borderLeft: `4px solid ${task.status === 'Completed' ? '#10b981' : task.status === 'Pending' ? '#3b82f6' : task.status === 'Accepted' ? '#f59e0b' : '#ef4444'}` }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                                  <div>
+                                      <h3 style={{ margin: 0 }}>{task.title} <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 'normal' }}>to {task.assignedTo?.username}</span></h3>
+                                  </div>
+                                  <span style={{ padding: '0.25rem 0.75rem', borderRadius: '999px', fontSize: '0.85rem', fontWeight: '500', backgroundColor: 'var(--bg-secondary)' }}>{task.status}</span>
+                              </div>
+                              <p style={{ color: 'var(--text-secondary)' }}>{task.description}</p>
+                              {task.revertReason && task.status === 'Reverted' && (
+                                  <div style={{ marginTop: '0.5rem', padding: '0.75rem', backgroundColor: '#fee2e2', color: '#991b1b', borderRadius: '8px', fontSize: '0.9rem' }}>
+                                      <strong>Revert Reason:</strong> {task.revertReason}
+                                  </div>
+                              )}
+                          </div>
+                      ))}
+                  </div>
+              )}
+          </div>
+      </div>
+  );
+
   if (!user || user.role !== 'admin') {
     return (
       <div className="admin-login-redirect" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', gap: '1rem', background: 'var(--bg-primary)' }}>
@@ -845,6 +1013,8 @@ const AdminPortal = () => {
                 </div>
               </div>
             )}
+            {activeTab === 'sales' && <SalesView />}
+            {activeTab === 'tasks' && <TasksView />}
             {activeTab === 'requests' && <RequestsView />}
             {activeTab === 'alerts' && <AlertsView />}
             {activeTab === 'employee-logs' && <EmployeeLogsView />}

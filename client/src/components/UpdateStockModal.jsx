@@ -9,6 +9,10 @@ const UpdateStockModal = ({ isOpen, onClose, onUpdate, chemical, role }) => {
   const [reason, setReason] = useState('');
   const [isDelivered, setIsDelivered] = useState(false);
   const [isPaymentReceived, setIsPaymentReceived] = useState(false);
+  
+  // New Sales Fields
+  const [amount, setAmount] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('N/A');
 
   const [error, setError] = useState('');
 
@@ -18,6 +22,8 @@ const UpdateStockModal = ({ isOpen, onClose, onUpdate, chemical, role }) => {
       setReason('');
       setIsDelivered(false);
       setIsPaymentReceived(false);
+      setAmount('');
+      setPaymentMethod('N/A');
       setError('');
     }
   }, [chemical, role]);
@@ -33,11 +39,21 @@ const UpdateStockModal = ({ isOpen, onClose, onUpdate, chemical, role }) => {
             setError(`Cannot sell more than available (${chemical.quantity} ${chemical.unit})`);
             return;
         }
+        if (val <= 0) {
+            setError(`Must sell at least 1 unit.`);
+            return;
+        }
+        if (!amount || Number(amount) < 0) {
+            setError('Please enter a valid sale amount.');
+            return;
+        }
         onUpdate({
             soldQuantity: val,
             reason,
             isDelivered,
-            isPaymentReceived
+            isPaymentReceived,
+            amount: Number(amount),
+            paymentMethod: paymentMethod === 'N/A' && isPaymentReceived ? 'Cash' : paymentMethod
         });
     } else {
         onUpdate({
@@ -93,6 +109,35 @@ const UpdateStockModal = ({ isOpen, onClose, onUpdate, chemical, role }) => {
                 </span>
             </div>
           </div>
+
+          {role !== 'admin' && (
+            <div className="sales-fields" style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
+               <div style={{ flex: 1 }}>
+                   <Input
+                       label="Total Amount (₹)"
+                       type="number"
+                       value={amount}
+                       onChange={(e) => setAmount(e.target.value)}
+                       required
+                       min="0"
+                   />
+               </div>
+               <div style={{ flex: 1 }}>
+                   <label className="input-label" style={{ display: 'block', marginBottom: '0.5rem' }}>Payment Method</label>
+                   <select 
+                       className="input-field" 
+                       value={paymentMethod} 
+                       onChange={(e) => setPaymentMethod(e.target.value)}
+                       style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)' }}
+                   >
+                       <option value="N/A">Not Paid Yet</option>
+                       <option value="UPI">UPI</option>
+                       <option value="Cash">Cash</option>
+                       <option value="Cheque">Cheque</option>
+                   </select>
+               </div>
+            </div>
+          )}
 
           <div className="reason-field" style={{ marginBottom: '1.5rem' }}>
             <label className="input-label" style={{ display: 'block', marginBottom: '0.5rem' }}>Reason for Update</label>

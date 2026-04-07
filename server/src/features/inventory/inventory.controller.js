@@ -1,6 +1,7 @@
 const Chemical = require('./inventory.model');
 const InventoryUpdate = require('./update.model');
 const Settings = require('../settings/settings.model');
+const Sale = require('../sales/sale.model');
 const logActivity = require('../activity/activity.controller').logActivity;
 
 const getAllChemicals = async (req, res) => {
@@ -99,7 +100,7 @@ const deleteChemical = async (req, res) => {
 
 const recordUpdate = async (req, res) => {
     try {
-        let { newQuantity, soldQuantity, reason, isDelivered, isPaymentReceived, userId, username, role } = req.body;
+        let { newQuantity, soldQuantity, reason, isDelivered, isPaymentReceived, amount, paymentMethod, userId, username, role } = req.body;
         
         if (!userId || !username || !reason) {
             return res.status(400).json({ message: 'Missing required fields: userId, username, or reason' });
@@ -112,6 +113,7 @@ const recordUpdate = async (req, res) => {
         const previousQuantity = chemical.quantity;
         let finalQuantity;
         let details = '';
+        let isSale = false;
 
         if (role === 'admin' && newQuantity !== undefined) {
             finalQuantity = Number(newQuantity);
@@ -123,6 +125,7 @@ const recordUpdate = async (req, res) => {
             }
             finalQuantity = previousQuantity - sold;
             details = `${username} recorded sale of ${chemical.name}. Initial: ${previousQuantity}, Sold: ${sold}, Remaining: ${finalQuantity}. Reason: ${reason}`;
+            isSale = true;
         } else if (newQuantity !== undefined) {
             finalQuantity = Number(newQuantity);
             if (role !== 'admin' && finalQuantity > previousQuantity) {
@@ -158,6 +161,20 @@ const recordUpdate = async (req, res) => {
             isDelivered,
             isPaymentReceived
         });
+
+        if (isSale) {
+             const numericAmount = Number(amount) || 0;
+             await Sale.create({
+                 chemicalId: chemical._id,
+                 chemicalName: chemical.name,
+                 userId,
+                 username,
+                 quantity: Number(soldQuantity),
+                 amount: numericAmount,
+                 paymentMethod: paymentMethod || 'N/A',
+                 isPaymentReceived: !!isPaymentReceived
+             });
+        }
 
         await logActivity({
             user: userId,
