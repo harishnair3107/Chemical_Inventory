@@ -42,6 +42,7 @@ app.use('/api/settings', require('./features/settings/settings.routes'));
 app.use('/api/task', require('./features/task/task.routes'));
 app.use('/api/sales', require('./features/sales/sale.routes'));
 app.use('/api/expenses', require('./features/expense/expense.routes'));
+app.use('/api/analytics', require('./features/analytics/analytics.routes'));
 
 // Health Check
 app.get('/', (req, res) => {

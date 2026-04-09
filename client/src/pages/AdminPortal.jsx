@@ -6,7 +6,9 @@ import Input from '../components/Input';
 import Button from '../components/Button';
 import Sidebar from '../components/Sidebar';
 import InventoryList from './InventoryList';
+import AnalyticsView from '../components/AnalyticsView';
 import Calendar from '../components/Calendar';
+import '../styles/Analytics.css';
 import { 
   Shield, 
   Clock, 
@@ -65,6 +67,7 @@ const AdminPortal = () => {
   const [salesLogs, setSalesLogs] = useState([]);
   const [salesStats, setSalesStats] = useState({ monthlySales: 0, yearlySales: 0, monthlyProfit: 0, yearlyProfit: 0 });
   const [taskForm, setTaskForm] = useState({ title: '', description: '', assignedTo: '', deadline: '' });
+  const [refreshEnabled, setRefreshEnabled] = useState(true);
   
   const [expenses, setExpenses] = useState([]);
   const [expenseForm, setExpenseForm] = useState({ category: 'Salary', amount: '', date: new Date().toISOString().substring(0, 10), notes: '' });
@@ -90,19 +93,21 @@ const AdminPortal = () => {
       fetchExpenses();
 
       const interval = setInterval(() => {
-        fetchRequests();
-        fetchPassRequests();
-        fetchActivities();
-        fetchAlerts();
-        fetchStats();
-        fetchAttendance(selectedDate);
-        fetchTasks();
-        fetchSales();
-        fetchExpenses();
+        if (refreshEnabled && !isUpdating && !processing) {
+          fetchRequests();
+          fetchPassRequests();
+          fetchActivities();
+          fetchAlerts();
+          fetchStats();
+          fetchAttendance(selectedDate);
+          fetchTasks();
+          fetchSales();
+          fetchExpenses();
+        }
       }, 5000);
       return () => clearInterval(interval);
     }
-  }, [user, selectedDate, salesMonth, salesYear, salesPaymentMethod]);
+  }, [user, selectedDate, salesMonth, salesYear, salesPaymentMethod, refreshEnabled, isUpdating, processing]);
 
   const fetchSettings = async () => {
     try {
@@ -1101,14 +1106,25 @@ const AdminPortal = () => {
             <div className="top-bar-title" style={{ textTransform: 'capitalize' }}>
               {activeTab.replace('-', ' ')}
             </div>
-            <div className="admin-badge">
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+              <button 
+                className={`refresh-toggle-btn ${refreshEnabled ? 'active' : 'paused'}`}
+                onClick={() => setRefreshEnabled(!refreshEnabled)}
+                title={refreshEnabled ? "Pause Live Updates" : "Resume Live Updates"}
+              >
+                {refreshEnabled ? <RefreshCw size={18} className="spin-slow" /> : <RefreshCw size={18} style={{ opacity: 0.5 }} />}
+                <span>{refreshEnabled ? 'Live' : 'Paused'}</span>
+              </button>
+              <div className="admin-badge">
                 <Shield size={16} />
-                <span>Secure Session</span>
+                <span>Active Admin Session</span>
+              </div>
             </div>
           </header>
 
           <div className="admin-page-content">
             {activeTab === 'dashboard' && <DashboardView />}
+            {activeTab === 'analytics' && <AnalyticsView />}
             {activeTab === 'inventory' && <InventoryList />}
             {activeTab === 'pass-requests' && <PassRequestsView />}
             {activeTab === 'attendance' && (

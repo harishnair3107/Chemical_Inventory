@@ -1,0 +1,397 @@
+================================================================================
+  CHEMICAL INVENTORY MANAGEMENT SYSTEM
+  Internship Progress Report — 13 Week Breakdown
+  Stack: React.js · Node.js · Express.js · MongoDB · Netlify · Render
+================================================================================
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+WEEK 1 — Project Onboarding & Requirements Analysis
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  • Conducted a thorough analysis of the client's existing inventory workflow,
+    identifying critical pain points in manual chemical stock tracking and
+    financial record-keeping.
+
+  • Established the full technical requirements document (SRS), mapping business
+    needs to a scalable MERN stack architecture with clear separation of concerns
+    between Admin and Employee roles.
+
+  • Set up the monorepo project structure with dedicated client/ and server/
+    directories, configured .gitignore, and initialized the Git repository with
+    a structured branching strategy (main, dev, feature/*).
+
+  • Defined the MongoDB data schema for core entities — Chemical, User, Sale,
+    Expense, Task, Attendance — with relationship mapping and field-level
+    validation planning.
+
+  • Configured the development environment with environment variable management
+    (.env), Nodemon for hot-reloading, and Vite for the React frontend with
+    alias path resolution.
+
+  • Prepared a detailed week-by-week delivery roadmap and communicated project
+    milestones and deliverables to stakeholders.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+WEEK 2 — Authentication System & Role-Based Access Control
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  • Architected a stateless JWT-based authentication system with secure httpOnly
+    cookie handling, implementing separate access flows for Admin and Employee
+    roles.
+
+  • Built the full authentication API (/register, /login, /logout, /verify-otp)
+    with bcrypt password hashing (salt rounds: 10) and middleware-level route
+    protection using verifyToken.
+
+  • Designed and implemented OTP-based forgot-password flow using Nodemailer
+    with Gmail SMTP, including token expiry logic and a secure reset endpoint.
+
+  • Developed React authentication context (AuthContext) with persistent session
+    management, protected route wrappers, and automatic redirection based on
+    user role.
+
+  • Implemented an access request system allowing new employees to submit join
+    requests that admins approve or reject, eliminating the need for manual
+    account provisioning.
+
+  • Enforced server-side role validation on all API routes (isAdmin middleware),
+    ensuring zero privilege escalation vulnerabilities between employee and admin
+    endpoints.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+WEEK 3 — Inventory Management Module
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  • Designed and implemented the Chemical Mongoose model with fields for name,
+    category, quantity, unit, purchase price, sale price, expiry date, and
+    status — with pre-save hooks for automatic status transitions
+    (Available → Low Stock → Out of Stock).
+
+  • Built a complete CRUD REST API for chemical inventory with Express Router,
+    including query-based filtering by category, status, and expiry range,
+    serving paginated responses for performance.
+
+  • Developed the Inventory UI in React with a dynamic data table, real-time
+    status badge rendering (color-coded), and a modal-driven Add/Edit/Delete
+    workflow with full form validation.
+
+  • Implemented an expiry alert system that flags chemicals expiring within 30
+    days, surfaced as a dedicated "Alerts" panel on the Admin Dashboard with
+    visual severity indicators.
+
+  • Integrated stock status auto-calculation logic on every quantity update —
+    ensuring the UI and database always reflect the true stock state without
+    manual intervention.
+
+  • Added a "Stock Movement" activity log that records every update event (who
+    updated, what quantity changed, timestamp) for full traceability of chemical
+    stock changes.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+WEEK 4 — Employee Dashboard & Stock Update Workflow
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  • Built a dedicated Employee Portal with a role-scoped sidebar navigation,
+    ensuring employees only access screens relevant to their permissions (no
+    inventory deletion, no financial data).
+
+  • Engineered a consumption-based stock update modal where employees input
+    "Quantity Sold," and the system computes the remaining stock and triggers
+    automatic status recalculation.
+
+  • Implemented the UpdateStockModal with mandatory payment method capture
+    (Cash / Credit / UPI / Pending) and sale amount input, persisting a linked
+    Sale record atomically with the stock update.
+
+  • Built the "My Sales" view for employees — a personal sales ledger filtered
+    by the authenticated user, displaying transaction history with chemical name,
+    amount, payment method, and timestamp.
+
+  • Added a "Recent Updates" feed on the employee dashboard showing the last 10
+    stock operations performed by that specific employee, rendered with relative
+    timestamps (e.g., "2 hours ago").
+
+  • Enforced a one-time payment status constraint — once a sale's payment status
+    is marked as received, the employee cannot modify it further, preserving
+    financial data integrity.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+WEEK 5 — Task Assignment & Management System
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  • Designed the Task Mongoose model with fields for title, description, assigned
+    employee (ref: User), deadline, priority, and a status state machine
+    (Pending → Accepted → In Progress → Completed / Reverted).
+
+  • Built the full Task CRUD API with population of employee details on fetch,
+    supporting filtering by status, assigned user, and deadline proximity for
+    the Admin's task management view.
+
+  • Developed the Admin Task Board UI — a Kanban-inspired layout displaying tasks
+    grouped by status with deadline countdowns, color-coded urgency badges, and
+    reassignment capability.
+
+  • Implemented the Employee Task Panel where employees can view their assigned
+    tasks, accept or revert assignments with optional remarks, and mark tasks as
+    completed — all triggering real-time status updates in the Admin view.
+
+  • Integrated automated email notification via Nodemailer to alert employees
+    instantly when a new task is assigned to them, including task title,
+    deadline, and admin instructions in the email body.
+
+  • Added overdue task detection logic — tasks past their deadline without
+    completion are automatically highlighted with a warning badge and surfaced
+    in a dedicated "Overdue" filter on the admin portal.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+WEEK 6 — Sales Tracking & Financial Analytics
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  • Built the Sale model and API endpoints supporting multi-filter queries by
+    date range, employee, payment method, and chemical — enabling granular sales
+    reporting directly from the database layer.
+
+  • Implemented the Admin Sales Dashboard with advanced filtering controls (date
+    pickers, dropdown filters), a summary statistics bar (total revenue, pending
+    collections, completed sales count), and a sortable transactions table.
+
+  • Engineered the Expense Tracking module allowing admins to log categorized
+    operational expenses (Salary, Electricity, Water, Land Tax) with real-time
+    monthly and yearly profit auto-calculation using aggregation pipelines.
+
+  • Built a financial summary panel on the Admin Dashboard displaying key KPIs:
+    Monthly Revenue, Total Expenses, Net Profit, and Outstanding Receivables —
+    computed live from the database on each render.
+
+  • Developed sales filter persistence using React state and useEffect
+    dependencies, ensuring filter selections survive tab navigation within the
+    portal session.
+
+  • Implemented monthly expense breakdown logic using MongoDB $group aggregation,
+    enabling the admin to compare spending per category month-over-month.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+WEEK 7 — Attendance Tracking System
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  • Designed the AttendanceLog Mongoose model to capture precise login/logout
+    timestamps per employee session, with timezone normalization to IST using
+    UTC offsets to prevent cross-timezone data inconsistencies.
+
+  • Built attendance recording middleware that automatically creates a login log
+    entry on successful authentication and closes the session record on logout —
+    completely transparent to the employee.
+
+  • Developed the Admin Attendance Calendar — an interactive calendar UI
+    (custom-built in React) where clicking any date populates a table of all
+    employee login/logout sessions for that day.
+
+  • Built the Employee Attendance View showing personal login history in a
+    structured log format with session duration calculation (logout time minus
+    login time), providing employees visibility into their own records.
+
+  • Implemented a mandatory "Please Remember to Log Out" overlay enforced at the
+    start of every employee session — ensuring clean session termination and
+    accurate working hour computation.
+
+  • Configured server-side attendance log segregation from general activity logs,
+    using separate database collections to keep attendance data clean, isolated,
+    and independently queryable.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+WEEK 8 — Admin Portal Consolidation & UI Architecture
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  • Refactored the Admin Portal into a single-page application shell with a
+    persistent sidebar and dynamic view-switching architecture, eliminating full-
+    page reloads between admin sections and improving perceived performance.
+
+  • Built reusable, prop-driven UI components (modal wrappers, data tables,
+    status badges, confirmation dialogs) and consolidated them into a shared
+    components/ library used across both admin and employee portals.
+
+  • Resolved a React Hooks violation caused by conditional hook calls inside
+    deeply nested component trees, eliminating the blank-screen crash that
+    affected the Admin Portal in production.
+
+  • Implemented localStorage-based sidebar tab persistence — the admin's last
+    active view is remembered across browser sessions, reducing navigation
+    friction.
+
+  • Added global toast notification system (react-hot-toast) integrated across
+    all API call flows — every success, error, and warning state now surfaces a
+    contextual message instead of silently failing.
+
+  • Enforced full mobile responsiveness across all admin views using CSS Grid and
+    Flexbox with strategic media query breakpoints, ensuring usability on tablet
+    and mobile screen widths.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+WEEK 9 — Real-Time Alerts & Notification System
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  • Engineered a polling-based real-time alert engine (setInterval, 5-second
+    cycle) that continuously monitors stock levels, task deadlines, and access
+    requests — surfacing live counts in the Admin sidebar notification badge.
+
+  • Built the Alerts Panel displaying categorized alerts: Low Stock warnings,
+    Expiry Alerts (chemicals expiring within 30 days), Overdue Tasks, and
+    Pending Employee Access Requests — each linking directly to the relevant
+    data.
+
+  • Implemented automated Nodemailer email alerts for critical events: low stock
+    threshold breach, chemical expiry warnings (30-day and 7-day advance
+    notices), and pending payment reminders for sales older than 7 days.
+
+  • Set up node-cron scheduled jobs on the backend to run nightly checks for
+    expiry and stock conditions — decoupling alert generation from user activity
+    and ensuring alerts fire even with no active sessions.
+
+  • Developed configurable alert threshold settings in the Admin Settings panel,
+    allowing the admin to set the low-stock quantity threshold per chemical unit
+    type.
+
+  • Built an Employee Activity Log aggregation view for admins, showing a
+    combined chronological feed of all stock updates, sales, and task completions
+    with user attribution and timestamps.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+WEEK 10 — Security Hardening & Backend Optimization
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  • Implemented express-rate-limit middleware on all authentication endpoints
+    (/login, /forgot-password, /verify-otp) to throttle brute-force attempts —
+    capping at 10 requests per 15-minute window per IP.
+
+  • Added server-side input validation using schema-level Mongoose validators
+    across all models, ensuring malformed or out-of-range data is rejected at
+    the database layer with descriptive error messages returned to the client.
+
+  • Configured production-grade CORS policy with an explicit origin whitelist
+    (ALLOWED_ORIGINS env variable), replacing the permissive wildcard policy
+    that was present in early development.
+
+  • Optimized MongoDB queries across the Sale, Activity, and Attendance
+    collections by adding compound indexes on (userId, createdAt) and
+    (status, createdAt) — reducing query execution time on large datasets.
+
+  • Separated environment configuration into .env.development and
+    .env.production files, preventing accidental use of production credentials
+    in local development and improving deployment hygiene.
+
+  • Audited all API routes for missing authentication middleware, securing 3
+    previously unprotected endpoints that could have exposed sensitive inventory
+    and financial data to unauthenticated requests.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+WEEK 11 — Reporting Module & Data Export
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  • Built the Reports section in the Admin Portal with tab-based navigation for
+    Financial Reports, Inventory Reports, and Employee Productivity Reports —
+    each pulling live data from dedicated aggregation API endpoints.
+
+  • Implemented monthly and yearly financial report generation displaying total
+    revenue, total expenses by category, net profit, and pending receivables —
+    computed via MongoDB $group and $sum aggregation pipelines.
+
+  • Developed an Inventory Valuation report that calculates the total current
+    stock value (quantity x purchase price) per chemical, with a grand total
+    summary — useful for asset tracking and compliance.
+
+  • Added data export functionality allowing admins to download Sales data as
+    CSV using client-side array-to-CSV conversion (Blob + URL.createObjectURL),
+    enabling integration with external tools like Excel for payroll and auditing.
+
+  • Built the Employee Productivity Report aggregating task completion ratios
+    (completed vs. assigned), total sales per employee, and stock update counts
+    for the current month — surfaced as a ranked leaderboard on the Admin
+    Dashboard.
+
+  • Integrated Recharts library for data visualization, rendering a 12-month
+    revenue trend line chart and a sales-by-category bar chart on the Reports
+    page, transforming raw numbers into actionable business intelligence.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+WEEK 12 — Deployment, CI/CD & Production Stabilization
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  • Deployed the React frontend to Netlify with custom build configuration
+    (vite build), environment variable injection via Netlify UI, and a
+    _redirects file to handle SPA client-side routing on all paths.
+
+  • Deployed the Node.js/Express backend to Render as a Web Service with auto-
+    deploy from the main branch, configuring environment variables for MongoDB
+    Atlas URI, JWT secret, and Gmail SMTP credentials.
+
+  • Diagnosed and resolved a critical production CORS error caused by missing
+    credentials: true in the Express CORS config and withCredentials in the
+    Axios client — cookies were not being transmitted cross-origin, blocking all
+    authenticated requests.
+
+  • Standardized all frontend API calls to use a centralized apiRequest utility
+    function (wrapping Axios with the base URL and credentials config),
+    eliminating 30+ scattered hardcoded localhost URLs that caused failures in
+    production.
+
+  • Configured MongoDB Atlas with IP whitelist (0.0.0.0/0 for Render's dynamic
+    IPs), cluster-level backups, and connection pooling via Mongoose maxPoolSize
+    for sustained concurrent request handling.
+
+  • Conducted end-to-end production smoke testing across all user flows (Admin
+    login, OTP reset, inventory update, sales recording, task assignment,
+    attendance log) — identifying and patching 4 environment-specific bugs
+    before go-live.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+WEEK 13 — Final Testing, Documentation & Handover
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  • Authored comprehensive project documentation including a ROADMAP.txt with a
+    prioritized future improvements matrix, a DEPLOYMENT.md with step-by-step
+    environment setup, and an inline code-level handover guide for the next
+    developer.
+
+  • Performed a full security audit of the application: verified JWT expiry
+    behavior, confirmed no sensitive data exposed in API responses, validated
+    that all admin-only routes reject employee-role tokens with 403 Forbidden.
+
+  • Conducted User Acceptance Testing (UAT) sessions with the client, walking
+    through all 10 admin portal modules and 5 employee portal screens,
+    collecting feedback and resolving final UX pain points.
+
+  • Wrote a prioritized backlog of future enhancements (Purchase Order
+    Management, CRM Lite, WebSocket real-time notifications, Mobile App, Audit
+    Log) with effort estimations — enabling the client to plan the next
+    development phase with clear scope.
+
+  • Delivered the final project presentation demonstrating the live production
+    system, highlighting key architectural decisions (JWT auth, role-based
+    access, automated alerts, real-time polling), performance optimizations,
+    and business impact.
+
+  • Successfully handed over the codebase via GitHub (harishnair3107/
+    Chemical_Inventory) with clean commit history, a structured README, and all
+    credentials transferred securely — ensuring zero-disruption knowledge
+    transfer to the client.
+
+
+================================================================================
+  Tech Stack: React.js · Vite · Node.js · Express.js · MongoDB Atlas
+              Mongoose · JWT · Nodemailer · node-cron · Recharts
+              Netlify · Render · Git
+  Repository: harishnair3107/Chemical_Inventory
+================================================================================

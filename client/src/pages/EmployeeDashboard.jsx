@@ -51,14 +51,19 @@ const EmployeeDashboard = () => {
 
   // Payment modal state
   const [paymentModal, setPaymentModal] = useState({ open: false, saleId: null });
+  const [refreshEnabled, setRefreshEnabled] = useState(true);
 
   useEffect(() => {
     if (user) {
       fetchAllData();
-      const interval = setInterval(fetchAllData, 5000);
+      const interval = setInterval(() => {
+        if (refreshEnabled && !paymentModal.open) {
+          fetchAllData();
+        }
+      }, 5000);
       return () => clearInterval(interval);
     }
-  }, [user]);
+  }, [user, refreshEnabled, paymentModal.open]);
 
   const fetchAllData = () => {
     fetchActivities();
@@ -461,9 +466,19 @@ const EmployeeDashboard = () => {
           <div className="top-bar-title" style={{ textTransform: 'capitalize' }}>
             {activeTab.replace('-', ' ')}
           </div>
-          <div className="admin-badge" style={{ backgroundColor: '#10b98120', color: '#10b981' }}>
-            <Activity size={16} />
-            <span>Active Employee Session</span>
+          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+            <button 
+              className={`refresh-toggle-btn ${refreshEnabled ? 'active' : 'paused'}`}
+              onClick={() => setRefreshEnabled(!refreshEnabled)}
+              title={refreshEnabled ? "Pause Live Updates" : "Resume Live Updates"}
+            >
+              {refreshEnabled ? <Activity size={18} className="spin-slow" /> : <Activity size={18} style={{ opacity: 0.5 }} />}
+              <span>{refreshEnabled ? 'Live' : 'Paused'}</span>
+            </button>
+            <div className="admin-badge" style={{ backgroundColor: '#10b98120', color: '#10b981' }}>
+              <Activity size={16} />
+              <span>Active Employee Session</span>
+            </div>
           </div>
         </header>
 

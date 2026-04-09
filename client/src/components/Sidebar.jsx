@@ -29,6 +29,7 @@ const Sidebar = ({ isOpen, toggleSidebar, user, logout, activeTab, setActiveTab 
 
   const adminLinks = [
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
+    { id: 'analytics', label: 'Analytics Dashboard', icon: <BarChart3 size={20} /> },
     { id: 'sales', label: 'Sales Management', icon: <BarChart3 size={20} /> },
     { id: 'expenses', label: 'Expense Tracking', icon: <ClipboardList size={20} /> },
     { id: 'tasks', label: 'Task Management', icon: <ClipboardList size={20} /> },

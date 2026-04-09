@@ -18,9 +18,13 @@ const InventoryList = () => {
 
   useEffect(() => {
     fetchChemicals();
-    const interval = setInterval(fetchChemicals, 5000);
+    const interval = setInterval(() => {
+        if (!isModalOpen && !isUpdateModalOpen) {
+            fetchChemicals();
+        }
+    }, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [isModalOpen, isUpdateModalOpen]);
 
   const fetchChemicals = async () => {
     try {
